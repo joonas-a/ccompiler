@@ -45,3 +45,4 @@
 .cache
 Testing
 build
+compile_commands.json
