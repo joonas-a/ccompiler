@@ -36,13 +36,17 @@ struct Token {
 };
 
 // Parser types
-struct Expression {};
+struct Expression {
+  bool operator==(const Expression &) const = default;
+};
 
 struct Literal : Expression {
   std::variant<int, bool> value;
 
   explicit Literal(int i) : value(i) {};
   explicit Literal(bool x) : value(x) {};
+
+  bool operator==(const Literal &) const = default;
 };
 
 struct Identifier : Expression {

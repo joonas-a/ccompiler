@@ -11,7 +11,7 @@ using namespace std;
 
 namespace compiler {
 
-Expression parse(vector<Token> &tokens) {
+Expression parse(const vector<Token> &tokens) {
   size_t pos = 0;
 
   auto peek = [&]() {
