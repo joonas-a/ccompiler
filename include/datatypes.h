@@ -3,16 +3,18 @@
 #include <cstddef>
 #include <datatypes.h>
 #include <string>
+#include <string_view>
+#include <variant>
 
+// Tokenizer types
 enum class Kind {
   IDENTIFIER,
   INT_LITERAL,
   OPERATOR,
   PUNCTUATOR,
   COMMENT,
-  MULTI_COMMENT_START,
-  MULTI_COMMENT_END,
   CONDITIONAL,
+  END,
 };
 
 struct Loc {
@@ -31,4 +33,27 @@ struct Token {
   std::string text;
 
   bool operator==(const Token &) const = default;
+};
+
+// Parser types
+struct Expression {};
+
+struct Literal : Expression {
+  std::variant<int, bool> value;
+
+  explicit Literal(int i) : value(i) {};
+  explicit Literal(bool x) : value(x) {};
+};
+
+struct Identifier : Expression {
+  std::string_view name;
+};
+
+struct BinaryOp : Expression {
+  Expression left;
+  std::string_view op;
+  Expression right;
+
+  explicit BinaryOp(Expression l, std::string_view o, Expression r)
+      : left(std::move(l)), op(o), right(std::move(r)) {};
 };
