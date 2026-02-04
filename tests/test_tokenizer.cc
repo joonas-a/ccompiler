@@ -17,6 +17,7 @@ TEST_CASE("Tokenizer tests", "[tokenizer]") {
   string input2 = "1+2-/<>\n<=>=!====*";
   string input3 = "()), {{}}, ; ";
   string input4 = "s# 404\n2//testing\n3";
+  string input5 = "(a+b)*c";
 
   vector<Token> output1{
       Token({L, Kind::CONDITIONAL, "if"}),
@@ -49,8 +50,16 @@ TEST_CASE("Tokenizer tests", "[tokenizer]") {
       Token({L, Kind::INT_LITERAL, "3"}),
   };
 
+  vector<Token> output5{
+      Token({L, Kind::PUNCTUATOR, "("}), Token({L, Kind::IDENTIFIER, "a"}),
+      Token({L, Kind::OPERATOR, "+"}),   Token({L, Kind::IDENTIFIER, "b"}),
+      Token({L, Kind::PUNCTUATOR, ")"}), Token({L, Kind::OPERATOR, "*"}),
+      Token({L, Kind::IDENTIFIER, "c"}),
+  };
+
   SECTION("Basics") { REQUIRE(compiler::tokenize(input1) == output1); }
   SECTION("Operators") { REQUIRE(compiler::tokenize(input2) == output2); }
   SECTION("Punctuation") { REQUIRE(compiler::tokenize(input3) == output3); }
   SECTION("Comment") { REQUIRE(compiler::tokenize(input4) == output4); }
+  SECTION("Valid binary op") { REQUIRE(compiler::tokenize(input5) == output5); }
 }

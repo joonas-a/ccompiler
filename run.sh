@@ -42,7 +42,7 @@ cleanbuild() {
 
 run_tests() {
   echo "Running tests in '${BUILD_DIR}'"
-  ctest --test-dir "$BUILD_DIR" --output-on-failure
+  ctest --test-dir "$BUILD_DIR" --verbose --output-on-failure
 }
 
 main() {
