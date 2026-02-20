@@ -1,5 +1,4 @@
 #include <algorithm>
-#include <array>
 #include <cstdio>
 #include <print>
 #include <ranges>
@@ -10,13 +9,6 @@
 #include <datatypes.h>
 
 using namespace std;
-
-static constexpr array<string_view, 12> OPERATORS = {
-    "+", "-", "*", "/", "=", "==", "!=", "<=", ">=", "<", ">", "%"};
-static constexpr array<string_view, 6> PUNCTUATORS = {"(", ")", "{",
-                                                      "}", ",", ";"};
-static constexpr array<string_view, 2> COMMENTS = {"//", "#"};
-static constexpr array<string_view, 3> CONDITIONALS = {"if", "then", "else"};
 
 bool is_numeric(const string_view text) {
   return ranges::all_of(text, [](char x) { return !!isdigit(x); });

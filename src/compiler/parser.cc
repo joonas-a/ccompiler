@@ -1,6 +1,8 @@
+#include <algorithm>
 #include <cassert>
 #include <datatypes.h>
 #include <functional>
+#include <iostream>
 #include <optional>
 #include <variant>
 #include <vector>
@@ -13,21 +15,28 @@ using namespace std;
 namespace compiler {
 
 Expression parse(const vector<Token> &tokens) {
-  size_t pos = 0;
+  ssize_t pos = 0;
 
   function<Expression()> parse_expr_left_assoc;
 
-  auto peek = [&]() {
+  auto peek = [&](ssize_t offset = 0) {
     if (tokens.empty())
       throw SyntaxError("Input cannot be empty");
-    if (pos != tokens.size())
-      return tokens.at(pos);
-    return Token({tokens[-1].loc, Kind::END, ""});
+
+    if (pos + offset < tokens.size())
+      return tokens.at(pos + offset);
+
+    if (pos + offset == tokens.size())
+      return Token({tokens[-1].loc, Kind::END, ""});
+
+    throw runtime_error("Peeking out of bounds");
   };
 
   auto consume =
       [&](optional<variant<string_view, vector<string_view>>> expected) {
         auto token = peek();
+
+        println("{}", token.text);
 
         if (expected.has_value()) {
           if (expected->index() == 0) {
@@ -44,16 +53,29 @@ Expression parse(const vector<Token> &tokens) {
         return token;
       };
 
-  auto parse_int_literal = [&]() {
-    if (peek().type != Kind::INT_LITERAL)
+  auto verify_syntax = [&]() {
+    const Kind next = peek().type;
+    if (next == Kind::INT_LITERAL || next == Kind::IDENTIFIER) {
       throw SyntaxError();
+    }
+  };
+
+  auto parse_int_literal = [&]() {
+    if ((pos > 0 && peek(-1).type == Kind::INT_LITERAL) ||
+        peek(1).type == Kind::INT_LITERAL) {
+      throw SyntaxError("Two int literals in a row");
+    }
+
     auto token = consume(nullopt);
     return Literal{stoi(token.text)};
   };
 
   auto parse_identifier = [&]() {
-    if (peek().type != Kind::IDENTIFIER)
-      throw SyntaxError();
+    if ((pos > 0 && peek(-1).type == Kind::IDENTIFIER) ||
+        peek(1).type == Kind::IDENTIFIER) {
+      throw SyntaxError("Two identifiers in a row");
+    }
+
     auto token = consume(nullopt);
     return Identifier{token.text};
   };
@@ -69,11 +91,15 @@ Expression parse(const vector<Token> &tokens) {
     auto token = peek();
     if (token.text == "(")
       return parse_parenthesized();
+
     if (token.type == Kind::INT_LITERAL)
       return parse_int_literal();
+
     if (token.type == Kind::IDENTIFIER)
       return parse_identifier();
-    throw SyntaxError("Expected to find a suitable term, instead got: " + token.text);
+
+    throw SyntaxError("Expected to find a suitable term, instead got: " +
+                      token.text);
   };
 
   auto parse_term = [&]() -> Expression {
@@ -88,6 +114,8 @@ Expression parse(const vector<Token> &tokens) {
 
       left = BinaryOp{left, op, right};
     };
+
+    verify_syntax();
     return left;
   };
 
@@ -104,6 +132,7 @@ Expression parse(const vector<Token> &tokens) {
       left = BinaryOp{left, op, right};
     };
 
+    verify_syntax();
     return left;
   };
 

@@ -5,7 +5,7 @@
 
 struct SyntaxError : std::runtime_error {
 
-  SyntaxError() noexcept : std::runtime_error("Unexpected token") {};
-  explicit SyntaxError(const std::string &msg) noexcept
-      : std::runtime_error(msg) {}
+  SyntaxError() : std::runtime_error("Unexpected token") {};
+  explicit SyntaxError(const std::string &msg) : std::runtime_error(msg) {}
+  explicit SyntaxError(const char *msg) : std::runtime_error(msg) {}
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <datatypes.h>
 #include <ostream>
@@ -76,3 +77,11 @@ struct BinaryOp : Expression {
     return out << "Op is: " << op.op;
   }
 };
+
+static constexpr std::array<std::string_view, 12> OPERATORS = {
+    "+", "-", "*", "/", "=", "==", "!=", "<=", ">=", "<", ">", "%"};
+static constexpr std::array<std::string_view, 6> PUNCTUATORS = {"(", ")", "{",
+                                                                "}", ",", ";"};
+static constexpr std::array<std::string_view, 2> COMMENTS = {"//", "#"};
+static constexpr std::array<std::string_view, 3> CONDITIONALS = {"if", "then",
+                                                                 "else"};
