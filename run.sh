@@ -10,7 +10,7 @@ BUILD_TYPE="Debug"
 GENERATOR="Ninja"
 
 print_usage() {
-  echo "Usage: $0 --build | --cleanbuild | --test"
+  echo "Usage: $0 --build | --cleanbuild | --test | --test-verbose"
   exit 1
 }
 
@@ -42,6 +42,11 @@ cleanbuild() {
 
 run_tests() {
   echo "Running tests in '${BUILD_DIR}'"
+  ctest --test-dir "$BUILD_DIR" --output-on-failure
+}
+
+run_tests_verbose() {
+  echo "Running tests in '${BUILD_DIR}'"
   ctest --test-dir "$BUILD_DIR" --verbose --output-on-failure
 }
 
@@ -59,6 +64,11 @@ main() {
       configure
       build
       run_tests
+      ;;
+    --test-verbose)
+      configure
+      build
+      run_tests_verbose
       ;;
     --cleanbuild)
       configure
