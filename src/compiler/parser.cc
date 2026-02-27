@@ -1,9 +1,9 @@
-#include <algorithm>
 #include <cassert>
 #include <datatypes.h>
 #include <functional>
-#include <iostream>
+#include <memory>
 #include <optional>
+#include <utility>
 #include <variant>
 #include <vector>
 
@@ -14,29 +14,33 @@ using namespace std;
 
 namespace compiler {
 
-Expression parse(const vector<Token> &tokens) {
+unique_ptr<Expression> parse(const vector<Token> &tokens) {
   ssize_t pos = 0;
 
-  function<Expression()> parse_expr_left_assoc;
+  function<unique_ptr<Expression>()> parse_expr_left_assoc;
 
-  auto peek = [&](ssize_t offset = 0) {
+  auto peek = [&](ssize_t offset = 0) -> const Token & {
     if (tokens.empty())
       throw SyntaxError("Input cannot be empty");
 
-    if (pos + offset < tokens.size())
+    if (pos + offset < static_cast<ssize_t>(tokens.size())) {
+      println("Peeking: {}", tokens.at(pos + offset).text);
       return tokens.at(pos + offset);
+    }
 
-    if (pos + offset == tokens.size())
-      return Token({tokens[-1].loc, Kind::END, ""});
+    if (pos + offset == static_cast<ssize_t>(tokens.size())) {
+      static Token end{tokens.back().loc, Kind::END, ""};
+      return end;
+    }
 
     throw runtime_error("Peeking out of bounds");
   };
 
   auto consume =
       [&](optional<variant<string_view, vector<string_view>>> expected) {
-        auto token = peek();
+        const auto &token = peek();
 
-        println("{}", token.text);
+        println("Consuming {}", token.text);
 
         if (expected.has_value()) {
           if (expected->index() == 0) {
@@ -67,7 +71,7 @@ Expression parse(const vector<Token> &tokens) {
     }
 
     auto token = consume(nullopt);
-    return Literal{stoi(token.text)};
+    return make_unique<Literal>(stoi(token.text));
   };
 
   auto parse_identifier = [&]() {
@@ -77,17 +81,37 @@ Expression parse(const vector<Token> &tokens) {
     }
 
     auto token = consume(nullopt);
-    return Identifier{token.text};
+    return make_unique<Identifier>(token.text);
   };
 
   auto parse_parenthesized = [&]() {
     consume("(");
-    const auto expr = parse_expr_left_assoc();
+    auto expr = parse_expr_left_assoc();
     consume(")");
     return expr;
   };
 
-  auto parse_factor = [&]() -> Expression {
+  auto parse_conditional = [&]() -> unique_ptr<Expression> {
+    consume("if");
+    auto condition = parse_expr_left_assoc();
+    consume("then");
+    auto then_branch = parse_expr_left_assoc();
+
+    println("test");
+
+    if (peek().text == "else") {
+      consume(nullopt);
+      auto else_branch = parse_expr_left_assoc();
+
+      return make_unique<IfThenElseStatement>(
+          std::move(condition), std::move(then_branch), std::move(else_branch));
+    }
+
+    return make_unique<IfThenStatement>(std::move(condition),
+                                        std::move(then_branch));
+  };
+
+  auto parse_factor = [&]() -> unique_ptr<Expression> {
     auto token = peek();
     if (token.text == "(")
       return parse_parenthesized();
@@ -98,11 +122,14 @@ Expression parse(const vector<Token> &tokens) {
     if (token.type == Kind::IDENTIFIER)
       return parse_identifier();
 
+    if (token.type == Kind::CONDITIONAL)
+      return parse_conditional();
+
     throw SyntaxError("Expected to find a suitable term, instead got: " +
                       token.text);
   };
 
-  auto parse_term = [&]() -> Expression {
+  auto parse_term = [&]() -> unique_ptr<Expression> {
     const vector<string_view> ops{"*", "/"}; // FIXME
     auto left = parse_factor();
 
@@ -110,9 +137,9 @@ Expression parse(const vector<Token> &tokens) {
       const auto op_token = consume(nullopt);
       const auto op = op_token.text;
 
-      const auto right = parse_factor();
+      auto right = parse_factor();
 
-      left = BinaryOp{left, op, right};
+      left = make_unique<BinaryOp>(std::move(left), op, std::move(right));
     };
 
     verify_syntax();
@@ -125,11 +152,11 @@ Expression parse(const vector<Token> &tokens) {
 
     while (find_in(peek().text, ops)) {
       const auto op_token = consume(nullopt);
-      const auto op = op_token.text;
+      auto op = op_token.text;
 
-      const auto right = parse_term();
+      auto right = parse_term();
 
-      left = BinaryOp{left, op, right};
+      left = make_unique<BinaryOp>(std::move(left), op, std::move(right));
     };
 
     verify_syntax();
