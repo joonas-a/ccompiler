@@ -1,13 +1,17 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <datatypes.h>
+#include <iostream>
 #include <memory>
 #include <ostream>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <variant>
+#include <vector>
 
 // === Tokenizer types ===
 enum class Kind {
@@ -48,6 +52,12 @@ struct Token {
   std::string text;
 
   bool operator==(const Token &) const = default;
+
+  std::string as_string() const {
+    std::ostringstream oss;
+    oss << this->text << ", " << this->loc;
+    return oss.str();
+  }
 };
 
 // === Parser types ===
@@ -72,9 +82,8 @@ struct Literal : Expression {
   };
 
   void print(std::ostream &os) const override {
-    os << "Identifier(";
+    os << "Literal ";
     std::visit([&os](const auto &v) { os << v; }, value);
-    os << ")";
   }
 };
 
@@ -90,8 +99,40 @@ struct Identifier : Expression {
     return false;
   };
 
+  void print(std::ostream &os) const override { os << "\"" << value << "\""; }
+};
+
+struct FunctionCall : Expression {
+  std::unique_ptr<Identifier> name;
+  std::vector<std::unique_ptr<Expression>> args;
+
+  explicit FunctionCall(std::unique_ptr<Identifier> x,
+                        std::vector<std::unique_ptr<Expression>> a)
+      : name(std::move(x)), args(std::move(a)) {};
+
+  bool equals(const Expression &other) const override {
+    if (auto *o = dynamic_cast<const FunctionCall *>(&other)) {
+      auto eq = [](const std::unique_ptr<Expression> &a,
+                   const std::unique_ptr<Expression> &b) {
+        return a->equals(*b);
+      };
+      if (name->equals(*o->name) && args.size() == o->args.size() &&
+          std::equal(args.begin(), args.end(), o->args.begin(), eq))
+        return true;
+    };
+    return false;
+  };
+
   void print(std::ostream &os) const override {
-    os << "Literal (" << value << ")";
+    os << "Function (";
+    name->print(os);
+    os << ", Args: (";
+    for (size_t i = 0; i < args.size(); ++i) {
+      args[i]->print(os);
+      if (i + 1 < args.size())
+        os << ", ";
+    }
+    os << "))";
   }
 };
 
@@ -137,11 +178,9 @@ struct IfThenStatement : Expression {
   };
 
   void print(std::ostream &os) const override {
-    os << "IfThen(";
     condition->print(os);
     os << " ? ";
     then_branch->print(os);
-    os << ")";
   }
 };
 
@@ -166,13 +205,11 @@ struct IfThenElseStatement : Expression {
   };
 
   void print(std::ostream &os) const override {
-    os << "IfThen(";
     condition->print(os);
     os << " ? ";
     then_branch->print(os);
     os << " : ";
     else_branch->print(os);
-    os << ")";
   }
 };
 

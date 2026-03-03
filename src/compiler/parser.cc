@@ -24,7 +24,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
       throw SyntaxError("Input cannot be empty");
 
     if (pos + offset < static_cast<ssize_t>(tokens.size())) {
-      println("Peeking: {}", tokens.at(pos + offset).text);
+      // println("Peeking: {}", tokens.at(pos + offset).text);
       return tokens.at(pos + offset);
     }
 
@@ -40,12 +40,12 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
       [&](optional<variant<string_view, vector<string_view>>> expected) {
         const auto &token = peek();
 
-        println("Consuming {}", token.text);
+        // println("Consuming {}", token.text);
 
         if (expected.has_value()) {
           if (expected->index() == 0) {
             if (get<0>(*expected) != token.text) {
-              throw SyntaxError("Expected something other than: " + token.text);
+              throw SyntaxError("Unexpected token: " + token.as_string());
             }
           } else {
             if (!find_in(token.text, get<1>(*expected)))
@@ -74,13 +74,32 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return make_unique<Literal>(stoi(token.text));
   };
 
-  auto parse_identifier = [&]() {
+  auto parse_function = [&](unique_ptr<Identifier> name) {
+    consume("(");
+    vector<unique_ptr<Expression>> args{};
+    args.emplace_back(parse_expr_left_assoc());
+
+    while (peek().text == ",") {
+      consume(",");
+      args.emplace_back(parse_expr_left_assoc());
+    }
+
+    consume(")");
+    return make_unique<FunctionCall>(std::move(name), std::move(args));
+  };
+
+  auto parse_identifier = [&]() -> unique_ptr<Expression> {
     if ((pos > 0 && peek(-1).type == Kind::IDENTIFIER) ||
         peek(1).type == Kind::IDENTIFIER) {
       throw SyntaxError("Two identifiers in a row");
     }
 
     auto token = consume(nullopt);
+
+    if (peek().text == "(") {
+      return parse_function(make_unique<Identifier>(token.text));
+    }
+
     return make_unique<Identifier>(token.text);
   };
 
@@ -96,8 +115,6 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     auto condition = parse_expr_left_assoc();
     consume("then");
     auto then_branch = parse_expr_left_assoc();
-
-    println("test");
 
     if (peek().text == "else") {
       consume(nullopt);
