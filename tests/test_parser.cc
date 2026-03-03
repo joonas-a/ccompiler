@@ -18,8 +18,8 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<Literal>(1));
     REQUIRE(*compiler::parse(compiler::tokenize("123")) ==
             *make_unique<Literal>(123));
-    REQUIRE(*compiler::parse(compiler::tokenize("a")) ==
-            *make_unique<Identifier>("a"));
+    REQUIRE(*compiler::parse(compiler::tokenize("abcd")) ==
+            *make_unique<Identifier>("abcd"));
   }
 
   SECTION("Binary ops + and -") {
@@ -59,6 +59,25 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<IfThenElseStatement>(make_unique<Identifier>("a"),
                                               make_unique<Identifier>("b"),
                                               make_unique<Identifier>("c")));
+    REQUIRE(
+        *compiler::parse(compiler::tokenize("if a then 1 + c else x * 2")) ==
+        *make_unique<IfThenElseStatement>(
+            make_unique<Identifier>("a"),
+            make_unique<BinaryOp>(make_unique<Literal>(1), "+",
+                                  make_unique<Identifier>("c")),
+            make_unique<BinaryOp>(make_unique<Identifier>("x"), "*",
+                                  make_unique<Literal>(2))));
+
+    REQUIRE(*compiler::parse(
+                compiler::tokenize("if a then (1 + c) * 3 else x * 2")) ==
+            *make_unique<IfThenElseStatement>(
+                make_unique<Identifier>("a"),
+                make_unique<BinaryOp>(
+                    make_unique<BinaryOp>(make_unique<Literal>("1"), "+",
+                                          make_unique<Identifier>("c")),
+                    "*", make_unique<Literal>("3")),
+                make_unique<BinaryOp>(make_unique<Identifier>("x"), "*",
+                                      make_unique<Literal>(2))));
   }
 }
 

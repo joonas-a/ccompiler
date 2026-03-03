@@ -55,11 +55,8 @@ struct Token {
 struct Expression {
   virtual ~Expression() = default;
   virtual bool equals(const Expression &other) const = 0;
+  virtual void print(std::ostream &os) const = 0;
 };
-
-inline bool operator==(const Expression &a, const Expression &b) {
-  return a.equals(b);
-}
 
 struct Literal : Expression {
   std::variant<int, bool> value;
@@ -73,39 +70,53 @@ struct Literal : Expression {
     };
     return false;
   };
+
+  void print(std::ostream &os) const override {
+    os << "Identifier(";
+    std::visit([&os](const auto &v) { os << v; }, value);
+    os << ")";
+  }
 };
 
 struct Identifier : Expression {
-  std::string name;
+  std::string value;
 
-  explicit Identifier(std::string x) : name(std::move(x)) {};
+  explicit Identifier(std::string x) : value(std::move(x)) {};
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Identifier *>(&other)) {
-      return name == o->name;
+      return value == o->value;
     };
     return false;
   };
+
+  void print(std::ostream &os) const override {
+    os << "Literal (" << value << ")";
+  }
 };
 
 struct BinaryOp : Expression {
-  std::unique_ptr<Expression> left;
+  std::unique_ptr<Expression> lhs;
   std::string op;
-  std::unique_ptr<Expression> right;
+  std::unique_ptr<Expression> rhs;
 
   explicit BinaryOp(std::unique_ptr<Expression> l, std::string o,
                     std::unique_ptr<Expression> r)
-      : left(std::move(l)), op(o), right(std::move(r)) {};
+      : lhs(std::move(l)), op(o), rhs(std::move(r)) {};
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const BinaryOp *>(&other)) {
-      return left->equals(*o->left) && op == o->op && right->equals(*o->right);
+      return lhs->equals(*o->lhs) && op == o->op && rhs->equals(*o->rhs);
     };
     return false;
   };
 
-  friend std::ostream &operator<<(std::ostream &out, const BinaryOp &op) {
-    return out << "Op is: " << op.op;
+  void print(std::ostream &os) const override {
+    os << "BinaryOp(";
+    lhs->print(os);
+    os << " " << op << " ";
+    rhs->print(os);
+    os << ")";
   }
 };
 
@@ -124,6 +135,14 @@ struct IfThenStatement : Expression {
     };
     return false;
   };
+
+  void print(std::ostream &os) const override {
+    os << "IfThen(";
+    condition->print(os);
+    os << " ? ";
+    then_branch->print(os);
+    os << ")";
+  }
 };
 
 struct IfThenElseStatement : Expression {
@@ -145,4 +164,23 @@ struct IfThenElseStatement : Expression {
     };
     return false;
   };
+
+  void print(std::ostream &os) const override {
+    os << "IfThen(";
+    condition->print(os);
+    os << " ? ";
+    then_branch->print(os);
+    os << " : ";
+    else_branch->print(os);
+    os << ")";
+  }
 };
+
+inline bool operator==(const Expression &a, const Expression &b) {
+  return a.equals(b);
+}
+
+inline std::ostream &operator<<(std::ostream &os, const Expression &e) {
+  e.print(os);
+  return os;
+}
