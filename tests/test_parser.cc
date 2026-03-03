@@ -102,9 +102,18 @@ TEST_CASE("Parser valid input", "[parser]") {
 
   SECTION("Function calls") {
     auto args = std::vector<std::unique_ptr<Expression>>{};
+
     args.emplace_back(std::make_unique<Identifier>("a"));
     REQUIRE(*compiler::parse(compiler::tokenize("f(a)")) ==
             *make_unique<FunctionCall>(make_unique<Identifier>("f"),
+                                       std::move(args)));
+
+    args.clear();
+    args.emplace_back(std::make_unique<BinaryOp>(
+        std::make_unique<Literal>(10), "*", std::make_unique<Literal>(5)));
+    args.emplace_back(std::make_unique<Identifier>("a"));
+    REQUIRE(*compiler::parse(compiler::tokenize("plus_fifty(10*5,a)")) ==
+            *make_unique<FunctionCall>(make_unique<Identifier>("plus_fifty"),
                                        std::move(args)));
   }
 }
