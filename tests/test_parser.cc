@@ -79,6 +79,34 @@ TEST_CASE("Parser valid input", "[parser]") {
                 make_unique<BinaryOp>(make_unique<Identifier>("x"), "*",
                                       make_unique<Literal>(2))));
   }
+
+  SECTION("Nested if else") {
+    REQUIRE(*compiler::parse(
+                compiler::tokenize("if a then if b then 10 else d else e")) ==
+            *make_unique<IfThenElseStatement>(
+                make_unique<Identifier>("a"),
+                make_unique<IfThenElseStatement>(make_unique<Identifier>("b"),
+                                                 make_unique<Literal>(10),
+                                                 make_unique<Identifier>("d")),
+
+                make_unique<Identifier>("e")));
+
+    REQUIRE(*compiler::parse(
+                compiler::tokenize("if a then b else if c then d else e")) ==
+            *make_unique<IfThenElseStatement>(
+                make_unique<Identifier>("a"), make_unique<Identifier>("b"),
+                make_unique<IfThenElseStatement>(
+                    make_unique<Identifier>("c"), make_unique<Identifier>("d"),
+                    make_unique<Identifier>("e"))));
+  }
+
+  SECTION("Function calls") {
+    auto args = std::vector<std::unique_ptr<Expression>>{};
+    args.emplace_back(std::make_unique<Identifier>("a"));
+    REQUIRE(*compiler::parse(compiler::tokenize("f(a)")) ==
+            *make_unique<FunctionCall>(make_unique<Identifier>("f"),
+                                       std::move(args)));
+  }
 }
 
 TEST_CASE("Parser invalid input", "[parser]") {
@@ -99,5 +127,16 @@ TEST_CASE("Parser invalid input", "[parser]") {
 
   SECTION("Trash in the middle") {
     REQUIRE_THROWS(compiler::parse(compiler::tokenize("a+b c*d")));
+  }
+
+  SECTION("Unterminated if") {
+    REQUIRE_THROWS(compiler::parse(compiler::tokenize("if a")));
+  }
+
+  SECTION("Else before then") {
+    REQUIRE_THROWS(compiler::parse(compiler::tokenize("if a else b")));
+  }
+  SECTION("Unterminated function call") {
+    REQUIRE_THROWS(compiler::parse(compiler::tokenize("f(a, b, c")));
   }
 }
