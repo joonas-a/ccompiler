@@ -73,9 +73,9 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<IfThenElseStatement>(
                 make_unique<Identifier>("a"),
                 make_unique<BinaryOp>(
-                    make_unique<BinaryOp>(make_unique<Literal>("1"), "+",
+                    make_unique<BinaryOp>(make_unique<Literal>(1), "+",
                                           make_unique<Identifier>("c")),
-                    "*", make_unique<Literal>("3")),
+                    "*", make_unique<Literal>(3)),
                 make_unique<BinaryOp>(make_unique<Identifier>("x"), "*",
                                       make_unique<Literal>(2))));
   }
