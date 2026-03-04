@@ -46,6 +46,24 @@ TEST_CASE("Parser valid input", "[parser]") {
                                    make_unique<Literal>(999)));
   }
 
+  SECTION("Binary ops < <= > >=") {
+    REQUIRE(*compiler::parse(compiler::tokenize("2<550")) ==
+            *make_unique<BinaryOp>(make_unique<Literal>(2), "<",
+                                   make_unique<Literal>(550)));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("31 <= 32")) ==
+            *make_unique<BinaryOp>(make_unique<Literal>(31), "<=",
+                                   make_unique<Literal>(32)));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("b>a")) ==
+            *make_unique<BinaryOp>(make_unique<Identifier>("b"), ">",
+                                   make_unique<Identifier>("a")));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("b>=b")) ==
+            *make_unique<BinaryOp>(make_unique<Identifier>("b"), ">=",
+                                   make_unique<Identifier>("b")));
+  }
+
   SECTION("Parenthesised input") {
     REQUIRE(*compiler::parse(compiler::tokenize("(a+b)")) ==
             *make_unique<BinaryOp>(make_unique<Identifier>("a"), "+",

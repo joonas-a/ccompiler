@@ -152,33 +152,19 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
                       token.text);
   };
 
-  auto parse_term = [&]() -> unique_ptr<Expression> {
+  parse_expr_left_assoc = [&]() {
     auto left = parse_factor();
 
-    while (find_in(peek().text, left_assoc_binary_ops[5])) {
-      const auto op_token = consume(nullopt);
-      const auto op = op_token.text;
+    for (size_t prec = 5; prec >= 3; --prec) {
+      while (find_in(peek().text, left_assoc_binary_ops[prec])) {
+        const auto op_token = consume(nullopt);
+        auto op = op_token.text;
 
-      auto right = parse_factor();
+        auto right = parse_factor();
 
-      left = make_unique<BinaryOp>(std::move(left), op, std::move(right));
-    };
-
-    verify_syntax();
-    return left;
-  };
-
-  parse_expr_left_assoc = [&]() {
-    auto left = parse_term();
-
-    while (find_in(peek().text, left_assoc_binary_ops[4])) {
-      const auto op_token = consume(nullopt);
-      auto op = op_token.text;
-
-      auto right = parse_term();
-
-      left = make_unique<BinaryOp>(std::move(left), op, std::move(right));
-    };
+        left = make_unique<BinaryOp>(std::move(left), op, std::move(right));
+      }
+    }
 
     verify_syntax();
     return left;
