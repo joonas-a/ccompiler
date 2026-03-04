@@ -14,7 +14,7 @@ using namespace std;
 
 namespace compiler {
 
-static const vector<vector<string_view>> left_assoc_binary_ops = {
+static const vector<vector<string_view>> la_binary_ops = {
     vector<string_view>{"or"},       vector<string_view>{"and"},
     vector<string_view>{"==", "!="}, vector<string_view>{"<", "<=", ">", ">="},
     vector<string_view>{"+", "-"},   vector<string_view>{"*", "/", "%"},
@@ -155,8 +155,9 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
   parse_expr_left_assoc = [&]() {
     auto left = parse_factor();
 
-    for (size_t prec = 5; prec >= 1; --prec) {
-      while (find_in(peek().text, left_assoc_binary_ops[prec])) {
+    for (auto prec_ops = la_binary_ops.rbegin();
+         prec_ops != la_binary_ops.rend(); ++prec_ops) {
+      while (find_in(peek().text, *prec_ops)) {
         const auto op_token = consume(nullopt);
         auto op = op_token.text;
 

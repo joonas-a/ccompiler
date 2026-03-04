@@ -73,6 +73,15 @@ TEST_CASE("Parser valid input", "[parser]") {
                                    "==", make_unique<Literal>(3)));
   }
 
+  SECTION("Binary ops and, or") {
+    REQUIRE(*compiler::parse(compiler::tokenize("b and a")) ==
+            *make_unique<BinaryOp>(make_unique<Identifier>("b"), "and",
+                                   make_unique<Identifier>("a")));
+    REQUIRE(*compiler::parse(compiler::tokenize("c or d")) ==
+            *make_unique<BinaryOp>(make_unique<Identifier>("c"),
+                                   "or", make_unique<Identifier>("d")));
+  }
+
   SECTION("Parenthesised input") {
     REQUIRE(*compiler::parse(compiler::tokenize("(a+b)")) ==
             *make_unique<BinaryOp>(make_unique<Identifier>("a"), "+",
