@@ -14,7 +14,7 @@ const Loc L{SIZE_T_MAX, SIZE_T_MAX};
 
 TEST_CASE("Tokenizer tests", "[tokenizer]") {
   string input1 = "if 3\nwhile \n \n else";
-  string input2 = "1+2-/<>\n<=>=!====*";
+  string input2 = "1+2-/<>\n<=>=!====* and a or 2";
   string input3 = "()), {{}}, ; ";
   string input4 = "s# 404\n2//testing\n3";
   string input5 = "(a+b)*c";
@@ -34,7 +34,9 @@ TEST_CASE("Tokenizer tests", "[tokenizer]") {
       Token({L, Kind::OPERATOR, ">"}),    Token({L, Kind::OPERATOR, "<="}),
       Token({L, Kind::OPERATOR, ">="}),   Token({L, Kind::OPERATOR, "!="}),
       Token({L, Kind::OPERATOR, "=="}),   Token({L, Kind::OPERATOR, "="}),
-      Token({L, Kind::OPERATOR, "*"}),
+      Token({L, Kind::OPERATOR, "*"}),    Token({L, Kind::OPERATOR, "and"}),
+      Token({L, Kind::IDENTIFIER, "a"}),  Token({L, Kind::OPERATOR, "or"}),
+      Token({L, Kind::INT_LITERAL, "2"}),
   };
 
   vector<Token> output3{

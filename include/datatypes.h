@@ -24,8 +24,8 @@ enum class Kind {
   END,
 };
 
-static constexpr std::array<std::string_view, 12> OPERATORS = {
-    "+", "-", "*", "/", "=", "==", "!=", "<=", ">=", "<", ">", "%"};
+static constexpr std::array<std::string_view, 14> OPERATORS = {
+    "+", "-", "*", "/", "=", "==", "!=", "<=", ">=", "<", ">", "%", "and", "or"};
 static constexpr std::array<std::string_view, 6> PUNCTUATORS = {"(", ")", "{",
                                                                 "}", ",", ";"};
 static constexpr std::array<std::string_view, 2> COMMENTS = {"//", "#"};

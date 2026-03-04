@@ -155,7 +155,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
   parse_expr_left_assoc = [&]() {
     auto left = parse_factor();
 
-    for (size_t prec = 5; prec >= 2; --prec) {
+    for (size_t prec = 5; prec >= 1; --prec) {
       while (find_in(peek().text, left_assoc_binary_ops[prec])) {
         const auto op_token = consume(nullopt);
         auto op = op_token.text;
