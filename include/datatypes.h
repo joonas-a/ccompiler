@@ -24,8 +24,9 @@ enum class Kind {
   END,
 };
 
-static constexpr std::array<std::string_view, 14> OPERATORS = {
-    "+", "-", "*", "/", "=", "==", "!=", "<=", ">=", "<", ">", "%", "and", "or"};
+static constexpr std::array<std::string_view, 15> OPERATORS = {
+    "+",  "-",  "*", "/", "=", "==",  "!=",
+    "<=", ">=", "<", ">", "%", "and", "or", "not"};
 static constexpr std::array<std::string_view, 6> PUNCTUATORS = {"(", ")", "{",
                                                                 "}", ",", ";"};
 static constexpr std::array<std::string_view, 2> COMMENTS = {"//", "#"};
@@ -133,6 +134,27 @@ struct FunctionCall : Expression {
         os << ", ";
     }
     os << "))";
+  }
+};
+
+struct UnaryOp : Expression {
+  std::string op;
+  std::unique_ptr<Expression> expr;
+
+  explicit UnaryOp(std::string o, std::unique_ptr<Expression> e)
+      : op(o), expr(std::move(e)) {};
+
+  bool equals(const Expression &other) const override {
+    if (auto *o = dynamic_cast<const UnaryOp *>(&other)) {
+      return op == o->op && expr->equals(*o->expr);
+    };
+    return false;
+  };
+
+  void print(std::ostream &os) const override {
+    os << "UnaryOp(" << op << " ";
+    expr->print(os);
+    os << ")";
   }
 };
 
