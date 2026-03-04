@@ -24,6 +24,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
   ssize_t pos = 0;
 
   function<unique_ptr<Expression>()> parse_expr_left_assoc;
+  function<unique_ptr<Expression>()> parse_factor;
 
   auto peek = [&](ssize_t offset = 0) -> const Token & {
     if (tokens.empty())
@@ -134,10 +135,19 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
                                         std::move(then_branch));
   };
 
-  auto parse_factor = [&]() -> unique_ptr<Expression> {
+  auto parse_unary = [&]() {
+    consume(vector<string_view>{"-", "not"});
+    auto op = peek(-1).text;
+    return make_unique<UnaryOp>(op, std::move(parse_factor()));
+  };
+
+  parse_factor = [&]() -> unique_ptr<Expression> {
     auto token = peek();
     if (token.text == "(")
       return parse_parenthesized();
+
+    if (token.type == Kind::OPERATOR)
+      return parse_unary();
 
     if (token.type == Kind::INT_LITERAL)
       return parse_int_literal();

@@ -78,8 +78,33 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<BinaryOp>(make_unique<Identifier>("b"), "and",
                                    make_unique<Identifier>("a")));
     REQUIRE(*compiler::parse(compiler::tokenize("c or d")) ==
-            *make_unique<BinaryOp>(make_unique<Identifier>("c"),
-                                   "or", make_unique<Identifier>("d")));
+            *make_unique<BinaryOp>(make_unique<Identifier>("c"), "or",
+                                   make_unique<Identifier>("d")));
+  }
+
+  SECTION("Unary ops -, not") {
+    REQUIRE(*compiler::parse(compiler::tokenize("not 2")) ==
+            *make_unique<UnaryOp>("not", make_unique<Literal>(2)));
+    REQUIRE(*compiler::parse(compiler::tokenize("- 2")) ==
+            *make_unique<UnaryOp>("-", make_unique<Literal>(2)));
+    REQUIRE(*compiler::parse(compiler::tokenize("b and not a")) ==
+            *make_unique<BinaryOp>(
+                make_unique<Identifier>("b"), "and",
+                make_unique<UnaryOp>("not", make_unique<Identifier>("a"))));
+    REQUIRE(*compiler::parse(compiler::tokenize("b and not-a")) ==
+            *make_unique<BinaryOp>(
+                make_unique<Identifier>("b"), "and",
+                make_unique<UnaryOp>(
+                    "not",
+                    make_unique<UnaryOp>("-", make_unique<Identifier>("a")))));
+    REQUIRE(*compiler::parse(compiler::tokenize("1--2")) ==
+            *make_unique<BinaryOp>(
+                make_unique<Literal>(1), "-",
+                make_unique<UnaryOp>("-", make_unique<Literal>(2))));
+    REQUIRE(*compiler::parse(compiler::tokenize("-1-1")) ==
+            *make_unique<BinaryOp>(
+                make_unique<UnaryOp>("-", make_unique<Literal>(1)), "-",
+                make_unique<Literal>(1)));
   }
 
   SECTION("Parenthesised input") {
