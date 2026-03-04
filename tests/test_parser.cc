@@ -22,7 +22,7 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<Identifier>("abcd"));
   }
 
-  SECTION("Binary ops + and -") {
+  SECTION("Binary ops +, -") {
     REQUIRE(*compiler::parse(compiler::tokenize("2+550")) ==
             *make_unique<BinaryOp>(make_unique<Literal>(2), "+",
                                    make_unique<Literal>(550)));
@@ -32,7 +32,7 @@ TEST_CASE("Parser valid input", "[parser]") {
                                    make_unique<Literal>(999)));
   }
 
-  SECTION("Binary ops * / %") {
+  SECTION("Binary ops *, %") {
     REQUIRE(*compiler::parse(compiler::tokenize("2*550")) ==
             *make_unique<BinaryOp>(make_unique<Literal>(2), "*",
                                    make_unique<Literal>(550)));
@@ -46,22 +46,31 @@ TEST_CASE("Parser valid input", "[parser]") {
                                    make_unique<Literal>(999)));
   }
 
-  SECTION("Binary ops < <= > >=") {
+  SECTION("Binary ops <, <=, >, >=") {
     REQUIRE(*compiler::parse(compiler::tokenize("2<550")) ==
             *make_unique<BinaryOp>(make_unique<Literal>(2), "<",
                                    make_unique<Literal>(550)));
 
     REQUIRE(*compiler::parse(compiler::tokenize("31 <= 32")) ==
-            *make_unique<BinaryOp>(make_unique<Literal>(31), "<=",
-                                   make_unique<Literal>(32)));
+            *make_unique<BinaryOp>(make_unique<Literal>(31),
+                                   "<=", make_unique<Literal>(32)));
 
     REQUIRE(*compiler::parse(compiler::tokenize("b>a")) ==
             *make_unique<BinaryOp>(make_unique<Identifier>("b"), ">",
                                    make_unique<Identifier>("a")));
 
     REQUIRE(*compiler::parse(compiler::tokenize("b>=b")) ==
-            *make_unique<BinaryOp>(make_unique<Identifier>("b"), ">=",
-                                   make_unique<Identifier>("b")));
+            *make_unique<BinaryOp>(make_unique<Identifier>("b"),
+                                   ">=", make_unique<Identifier>("b")));
+  }
+
+  SECTION("Binary ops !=, ==") {
+    REQUIRE(*compiler::parse(compiler::tokenize("b != a")) ==
+            *make_unique<BinaryOp>(make_unique<Identifier>("b"),
+                                   "!=", make_unique<Identifier>("a")));
+    REQUIRE(*compiler::parse(compiler::tokenize("3 == 3")) ==
+            *make_unique<BinaryOp>(make_unique<Literal>(3),
+                                   "==", make_unique<Literal>(3)));
   }
 
   SECTION("Parenthesised input") {
