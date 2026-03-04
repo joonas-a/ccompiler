@@ -32,13 +32,17 @@ TEST_CASE("Parser valid input", "[parser]") {
                                    make_unique<Literal>(999)));
   }
 
-  SECTION("Binary ops * and /") {
+  SECTION("Binary ops * / %") {
     REQUIRE(*compiler::parse(compiler::tokenize("2*550")) ==
             *make_unique<BinaryOp>(make_unique<Literal>(2), "*",
                                    make_unique<Literal>(550)));
 
     REQUIRE(*compiler::parse(compiler::tokenize("310 / 999")) ==
             *make_unique<BinaryOp>(make_unique<Literal>(310), "/",
+                                   make_unique<Literal>(999)));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("310 % 999")) ==
+            *make_unique<BinaryOp>(make_unique<Literal>(310), "%",
                                    make_unique<Literal>(999)));
   }
 
@@ -147,5 +151,6 @@ TEST_CASE("Parser invalid input", "[parser]") {
   }
   SECTION("Unterminated function call") {
     REQUIRE_THROWS(compiler::parse(compiler::tokenize("f(a, b, c")));
+    REQUIRE_THROWS(compiler::parse(compiler::tokenize("f(")));
   }
 }

@@ -14,6 +14,12 @@ using namespace std;
 
 namespace compiler {
 
+static const vector<vector<string_view>> left_assoc_binary_ops = {
+    vector<string_view>{"or"},       vector<string_view>{"and"},
+    vector<string_view>{"==", "!="}, vector<string_view>{"<", "<=", ">", ">="},
+    vector<string_view>{"+", "-"},   vector<string_view>{"*", "/", "%"},
+};
+
 unique_ptr<Expression> parse(const vector<Token> &tokens) {
   ssize_t pos = 0;
 
@@ -33,7 +39,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
       return end;
     }
 
-    throw runtime_error("Peeking out of bounds");
+    throw runtime_error("Out of bounds!");
   };
 
   auto consume =
@@ -147,10 +153,9 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
   };
 
   auto parse_term = [&]() -> unique_ptr<Expression> {
-    const vector<string_view> ops{"*", "/"}; // FIXME
     auto left = parse_factor();
 
-    while (find_in(peek().text, ops)) {
+    while (find_in(peek().text, left_assoc_binary_ops[5])) {
       const auto op_token = consume(nullopt);
       const auto op = op_token.text;
 
@@ -164,10 +169,9 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
   };
 
   parse_expr_left_assoc = [&]() {
-    const vector<string_view> ops{"+", "-"}; // FIXME
     auto left = parse_term();
 
-    while (find_in(peek().text, ops)) {
+    while (find_in(peek().text, left_assoc_binary_ops[4])) {
       const auto op_token = consume(nullopt);
       auto op = op_token.text;
 
