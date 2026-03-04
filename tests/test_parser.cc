@@ -165,6 +165,26 @@ TEST_CASE("Parser valid input", "[parser]") {
                     make_unique<Identifier>("e"))));
   }
 
+  SECTION("Assignment =") {
+    REQUIRE(*compiler::parse(compiler::tokenize("a = b")) ==
+            *make_unique<BinaryOp>(make_unique<Identifier>("a"), "=",
+                                   make_unique<Identifier>("b")));
+    REQUIRE(*compiler::parse(compiler::tokenize("a = b = c")) ==
+            *make_unique<BinaryOp>(
+                make_unique<Identifier>("a"), "=",
+                make_unique<BinaryOp>(make_unique<Identifier>("b"), "=",
+                                      make_unique<Identifier>("c"))));
+    REQUIRE(*compiler::parse(compiler::tokenize("1 * 1 = 2 % 2 = 0")) ==
+            *make_unique<BinaryOp>(
+                make_unique<BinaryOp>(make_unique<Literal>(1), "*",
+                                      make_unique<Literal>(1)),
+                "=",
+                make_unique<BinaryOp>(
+                    make_unique<BinaryOp>(make_unique<Literal>(2), "%",
+                                          make_unique<Literal>(2)),
+                    "=", make_unique<Literal>(0))));
+  }
+
   SECTION("Function calls") {
     auto args = std::vector<std::unique_ptr<Expression>>{};
 
