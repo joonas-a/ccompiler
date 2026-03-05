@@ -275,6 +275,27 @@ struct Block : Expression {
   }
 };
 
+struct Variable : Expression {
+  std::string name;
+  std::unique_ptr<Expression> value;
+
+  explicit Variable(std::string n, std::unique_ptr<Expression> v)
+      : name(std::move(n)), value(std::move(v)) {};
+
+  bool equals(const Expression &other) const override {
+    if (auto *o = dynamic_cast<const Variable *>(&other)) {
+      return name == o->name && value->equals(*o->value);
+    }
+    return false;
+  }
+
+  void print(std::ostream &os) const override {
+    os << "Var " << name << " = (";
+    value->print(os);
+    os << ") ";
+  }
+};
+
 inline bool operator==(const Expression &a, const Expression &b) {
   return a.equals(b);
 }

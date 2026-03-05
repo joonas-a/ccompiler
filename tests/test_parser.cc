@@ -258,6 +258,14 @@ TEST_CASE("Parser valid input", "[parser]") {
     REQUIRE(*compiler::parse(compiler::tokenize("{a;x=2;z}")) ==
             *make_unique<Block>(std::move(exprs)));
   }
+
+  SECTION("Variable declarations") {
+    REQUIRE(*compiler::parse(compiler::tokenize("var x = 123")) ==
+            *make_unique<Variable>("x", make_unique<Literal>(123)));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("var x = 1 + 2")) ==
+            *make_unique<Variable>("x", make_unique<BinaryOp>(make_unique<Literal>(1), "+", make_unique<Literal>(2))));
+  }
 }
 
 TEST_CASE("Parser invalid input", "[parser]") {
@@ -290,5 +298,10 @@ TEST_CASE("Parser invalid input", "[parser]") {
   SECTION("Unterminated function call") {
     REQUIRE_THROWS(compiler::parse(compiler::tokenize("f(a, b, c")));
     REQUIRE_THROWS(compiler::parse(compiler::tokenize("f(")));
+  }
+  SECTION("Non-top level variable calls") {
+    REQUIRE_THROWS(compiler::parse(compiler::tokenize("a = var b")));
+    REQUIRE_THROWS(compiler::parse(compiler::tokenize("if a then var b = 1")));
+    REQUIRE_THROWS(compiler::parse(compiler::tokenize("{a;b;a and var c = 1;}")));
   }
 }

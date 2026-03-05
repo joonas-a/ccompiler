@@ -144,8 +144,21 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return make_unique<UnaryOp>(op, std::move(parse_factor()));
   };
 
+  auto parse_variable = [&]() {
+    consume("var");
+    auto token = consume(nullopt);
+    if (token.type != Kind::IDENTIFIER) {
+      throw SyntaxError("Expected identifier for variable name, found: " +
+                        token.as_string());
+    }
+    consume("=");
+    return make_unique<Variable>(token.text,
+                                 std::move(parse_expr_left_assoc()));
+  };
+
   auto parse_block_content = [&](bool init_block) -> unique_ptr<Expression> {
-    auto expr = parse_expr_left_assoc();
+    auto expr =
+        peek().text == "var" ? parse_variable() : parse_expr_left_assoc();
     if (peek().text == ";" || init_block) {
       vector<unique_ptr<Expression>> exprs;
       exprs.push_back(std::move(expr));
@@ -155,7 +168,9 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
         if (peek().type == Kind::END || peek().text == "}") {
           exprs.push_back(std::move(make_unique<Literal>(monostate())));
         } else {
-          exprs.push_back(std::move(parse_expr_left_assoc()));
+          auto expr =
+              peek().text == "var" ? parse_variable() : parse_expr_left_assoc();
+          exprs.push_back(std::move(expr));
         }
       }
       return make_unique<Block>(std::move(exprs));
