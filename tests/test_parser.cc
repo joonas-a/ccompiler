@@ -6,6 +6,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include <compiler.h>
 #include <datatypes.h>
+#include <utility>
 #include <vector>
 
 using namespace std;
@@ -194,12 +195,68 @@ TEST_CASE("Parser valid input", "[parser]") {
                                        std::move(args)));
 
     args.clear();
+    REQUIRE(*compiler::parse(compiler::tokenize("f()")) ==
+            *make_unique<FunctionCall>(make_unique<Identifier>("f"),
+                                       std::move(args)));
+
+    args.clear();
     args.emplace_back(std::make_unique<BinaryOp>(
         std::make_unique<Literal>(10), "*", std::make_unique<Literal>(5)));
     args.emplace_back(std::make_unique<Identifier>("a"));
     REQUIRE(*compiler::parse(compiler::tokenize("plus_fifty(10*5,a)")) ==
             *make_unique<FunctionCall>(make_unique<Identifier>("plus_fifty"),
                                        std::move(args)));
+  }
+
+  SECTION("Blocks") {
+    auto exprs = std::vector<std::unique_ptr<Expression>>{};
+    exprs.emplace_back(make_unique<Identifier>("a"));
+    auto block = make_unique<Block>(std::move(exprs));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("{a}")) == *block);
+
+    exprs.clear();
+    auto inner_exprs = std::vector<std::unique_ptr<Expression>>{};
+    inner_exprs.emplace_back(std::make_unique<Identifier>("a"));
+    auto inner_block = std::make_unique<Block>(std::move(inner_exprs));
+    exprs.emplace_back(std::move(inner_block));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("{{a}}")) ==
+            *make_unique<Block>(std::move(exprs)));
+
+    exprs.clear();
+    inner_exprs.clear();
+    inner_exprs.emplace_back(std::make_unique<Identifier>("b"));
+    inner_block = std::make_unique<Block>(std::move(inner_exprs));
+    exprs.emplace_back(make_unique<Identifier>("a"));
+    exprs.emplace_back(std::move(inner_block));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("{a;{b}}")) ==
+            *make_unique<Block>(std::move(exprs)));
+
+    exprs.clear();
+    exprs.emplace_back(make_unique<BinaryOp>(make_unique<Identifier>("a"), "+",
+                                             make_unique<Identifier>("b")));
+    exprs.emplace_back(make_unique<Literal>(std::monostate()));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("a+b;")) ==
+            *make_unique<Block>(std::move(exprs)));
+
+    exprs.clear();
+    exprs.emplace_back(make_unique<Literal>(1));
+    exprs.emplace_back(make_unique<Literal>(2));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("1;2")) ==
+            *make_unique<Block>(std::move(exprs)));
+
+    exprs.clear();
+    exprs.emplace_back(make_unique<Identifier>("a"));
+    exprs.emplace_back(make_unique<BinaryOp>(make_unique<Identifier>("x"), "=",
+                                             make_unique<Literal>(2)));
+    exprs.emplace_back(make_unique<Identifier>("z"));
+
+    REQUIRE(*compiler::parse(compiler::tokenize("{a;x=2;z}")) ==
+            *make_unique<Block>(std::move(exprs)));
   }
 }
 

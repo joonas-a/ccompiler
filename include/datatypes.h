@@ -25,8 +25,8 @@ enum class Kind {
 };
 
 static constexpr std::array<std::string_view, 15> OPERATORS = {
-    "+",  "-",  "*", "/", "=", "==",  "!=",
-    "<=", ">=", "<", ">", "%", "and", "or", "not"};
+    "+",  "-", "*", "/", "=",   "==", "!=", "<=",
+    ">=", "<", ">", "%", "and", "or", "not"};
 static constexpr std::array<std::string_view, 6> PUNCTUATORS = {"(", ")", "{",
                                                                 "}", ",", ";"};
 static constexpr std::array<std::string_view, 2> COMMENTS = {"//", "#"};
@@ -70,10 +70,11 @@ struct Expression {
 };
 
 struct Literal : Expression {
-  std::variant<int, bool> value;
+  std::variant<int, bool, std::monostate> value;
 
   explicit Literal(int i) : value(i) {};
   explicit Literal(bool x) : value(x) {};
+  explicit Literal(std::monostate u) : value(u) {};
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Literal *>(&other)) {
@@ -84,7 +85,16 @@ struct Literal : Expression {
 
   void print(std::ostream &os) const override {
     os << "Literal ";
-    std::visit([&os](const auto &v) { os << v; }, value);
+    std::visit(
+        [&os](const auto &v) {
+          using T = std::decay_t<decltype(v)>;
+          if constexpr (std::is_same_v<T, std::monostate>) {
+            os << "{}";
+          } else {
+            os << v;
+          }
+        },
+        value);
   }
 };
 
@@ -232,6 +242,36 @@ struct IfThenElseStatement : Expression {
     then_branch->print(os);
     os << " : ";
     else_branch->print(os);
+  }
+};
+
+struct Block : Expression {
+  std::vector<std::unique_ptr<Expression>> exprs;
+
+  explicit Block(std::vector<std::unique_ptr<Expression>> e)
+      : exprs(std::move(e)) {};
+
+  bool equals(const Expression &other) const override {
+    if (auto *o = dynamic_cast<const Block *>(&other)) {
+      auto eq = [](const std::unique_ptr<Expression> &a,
+                   const std::unique_ptr<Expression> &b) {
+        return a->equals(*b);
+      };
+      if (exprs.size() == o->exprs.size() &&
+          std::equal(exprs.begin(), exprs.end(), o->exprs.begin(), eq))
+        return true;
+    };
+    return false;
+  };
+
+  void print(std::ostream &os) const override {
+    os << "Block: {\n";
+    for (size_t i = 0; i < exprs.size(); ++i) {
+      os << "  ";
+      exprs[i]->print(os);
+      os << '\n';
+    }
+    os << "}";
   }
 };
 

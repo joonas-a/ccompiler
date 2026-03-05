@@ -57,7 +57,7 @@ vector<Token> tokenize(const string_view input) {
       if (type == Kind::COMMENT)
         break;
 
-      all_tokens.push_back(Token({{line_num, 1}, type, match}));
+      all_tokens.emplace_back(Token({{line_num, 1}, type, match}));
     }
     ++line_num;
   }

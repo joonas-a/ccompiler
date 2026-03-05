@@ -84,11 +84,14 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
   auto parse_function = [&](unique_ptr<Identifier> name) {
     consume("(");
     vector<unique_ptr<Expression>> args{};
-    args.emplace_back(parse_expr_left_assoc());
 
-    while (peek().text == ",") {
-      consume(",");
+    if (peek().text != ")") {
       args.emplace_back(parse_expr_left_assoc());
+
+      while (peek().text == ",") {
+        consume(",");
+        args.emplace_back(parse_expr_left_assoc());
+      }
     }
 
     consume(")");
@@ -141,10 +144,39 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return make_unique<UnaryOp>(op, std::move(parse_factor()));
   };
 
+  auto parse_block_content = [&](bool init_block) -> unique_ptr<Expression> {
+    auto expr = parse_expr_left_assoc();
+    if (peek().text == ";" || init_block) {
+      vector<unique_ptr<Expression>> exprs;
+      exprs.push_back(std::move(expr));
+
+      while (peek().text == ";") {
+        consume(nullopt);
+        if (peek().type == Kind::END || peek().text == "}") {
+          exprs.push_back(std::move(make_unique<Literal>(monostate())));
+        } else {
+          exprs.push_back(std::move(parse_expr_left_assoc()));
+        }
+      }
+      return make_unique<Block>(std::move(exprs));
+    }
+    return expr;
+  };
+
+  auto parse_new_block = [&]() -> unique_ptr<Expression> {
+    consume("{");
+    auto block = parse_block_content(true);
+    consume("}");
+    return block;
+  };
+
   parse_factor = [&]() -> unique_ptr<Expression> {
     auto token = peek();
     if (token.text == "(")
       return parse_parenthesized();
+
+    if (token.text == "{")
+      return parse_new_block();
 
     if (token.type == Kind::OPERATOR)
       return parse_unary();
@@ -198,6 +230,6 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return left;
   };
 
-  return parse_expr_left_assoc();
+  return parse_block_content(false);
 }
 } // namespace compiler
