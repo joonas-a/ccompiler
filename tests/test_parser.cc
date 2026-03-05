@@ -264,7 +264,9 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<Variable>("x", make_unique<Literal>(123)));
 
     REQUIRE(*compiler::parse(compiler::tokenize("var x = 1 + 2")) ==
-            *make_unique<Variable>("x", make_unique<BinaryOp>(make_unique<Literal>(1), "+", make_unique<Literal>(2))));
+            *make_unique<Variable>(
+                "x", make_unique<BinaryOp>(make_unique<Literal>(1), "+",
+                                           make_unique<Literal>(2))));
   }
 }
 
@@ -302,6 +304,41 @@ TEST_CASE("Parser invalid input", "[parser]") {
   SECTION("Non-top level variable calls") {
     REQUIRE_THROWS(compiler::parse(compiler::tokenize("a = var b")));
     REQUIRE_THROWS(compiler::parse(compiler::tokenize("if a then var b = 1")));
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("{a;b;a and var c = 1;}")));
+    REQUIRE_THROWS(
+        compiler::parse(compiler::tokenize("{a;b;a and var c = 1;}")));
+  }
+}
+
+TEST_CASE("More edge cases", "[parser]") {
+  SECTION("Should fail") {
+    REQUIRE_THROWS(compiler::parse(compiler::tokenize("{ a b }")));
+    REQUIRE_THROWS(
+        compiler::parse(compiler::tokenize("{ if true then { a } b c }")));
+  }
+
+  SECTION("Should parse") {
+    REQUIRE_NOTHROW(compiler::parse(compiler::tokenize("{ { a } { b } }")));
+    REQUIRE_NOTHROW(
+        compiler::parse(compiler::tokenize("{ if true then { a } b }")));
+    REQUIRE_NOTHROW(
+        compiler::parse(compiler::tokenize("{ if true then { a }; b }")));
+    REQUIRE_NOTHROW(
+        compiler::parse(compiler::tokenize("{ if true then { a } b; c }")));
+    REQUIRE_NOTHROW(
+        compiler::parse(compiler::tokenize("{ if true then { a }; b; c }")));
+    REQUIRE_NOTHROW(compiler::parse(
+        compiler::tokenize("{ if true then { a } else { b } c }")));
+    REQUIRE_NOTHROW(
+        compiler::parse(compiler::tokenize("x = { { f(a) } { b } }")));
+  }
+
+  SECTION("Should equal") {
+    REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) ==
+            *compiler::parse(compiler::tokenize("{ { x } { y } }")));
+  }
+
+  SECTION("Should NOT equal") {
+    REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) !=
+            *compiler::parse(compiler::tokenize("{ { x }; { y }; }")));
   }
 }
