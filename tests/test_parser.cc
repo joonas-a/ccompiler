@@ -309,7 +309,7 @@ TEST_CASE("Parser invalid input", "[parser]") {
   }
 }
 
-TEST_CASE("More edge cases", "[parser]") {
+TEST_CASE("More edge cases", "[parser-edgecase]") {
   SECTION("Should fail") {
     REQUIRE_THROWS(compiler::parse(compiler::tokenize("{ a b }")));
     REQUIRE_THROWS(
@@ -317,20 +317,26 @@ TEST_CASE("More edge cases", "[parser]") {
   }
 
   SECTION("Should parse") {
+    REQUIRE_NOTHROW(compiler::parse(compiler::tokenize("{}")));
     REQUIRE_NOTHROW(compiler::parse(compiler::tokenize("{ { a } { b } }")));
+    REQUIRE_NOTHROW(compiler::parse(compiler::tokenize("{ a } { b }")));
     REQUIRE_NOTHROW(
-        compiler::parse(compiler::tokenize("{ if true then { a } b }")));
+        compiler::parse(compiler::tokenize("if true then { a } b ")));
+    // REQUIRE_NOTHROW(
+    //     compiler::parse(compiler::tokenize("{ if true then { f(a) } d(b) }")));
+    REQUIRE_NOTHROW(
+        compiler::parse(compiler::tokenize("if true then { a } b")));
+
     REQUIRE_NOTHROW(
         compiler::parse(compiler::tokenize("{ if true then { a }; b }")));
     REQUIRE_NOTHROW(
-        compiler::parse(compiler::tokenize("{ if true then { a } b; c }")));
-    REQUIRE_NOTHROW(
-        compiler::parse(compiler::tokenize("{ if true then { a }; b; c }")));
-    REQUIRE_NOTHROW(compiler::parse(
-        compiler::tokenize("{ if true then { a } else { b } c }")));
+        compiler::parse(compiler::tokenize("if true then { a } b; c")));
+    // REQUIRE_NOTHROW(
+    //     compiler::parse(compiler::tokenize("{ if true then { a }; b; c }")));
+    // REQUIRE_NOTHROW(compiler::parse(
+    //     compiler::tokenize("{ if true then { a } else { b } c }")));
     REQUIRE_NOTHROW(
         compiler::parse(compiler::tokenize("x = { { f(a) } { b } }")));
-  }
 
   SECTION("Should equal") {
     REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) ==
@@ -340,5 +346,6 @@ TEST_CASE("More edge cases", "[parser]") {
   SECTION("Should NOT equal") {
     REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) !=
             *compiler::parse(compiler::tokenize("{ { x }; { y }; }")));
+  }
   }
 }

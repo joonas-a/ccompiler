@@ -43,31 +43,32 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     throw runtime_error("Out of bounds!");
   };
 
-  auto consume =
-      [&](optional<variant<string_view, vector<string_view>>> expected) {
-        const auto &token = peek();
+  auto consume = [&](optional<variant<string, vector<string_view>>> expected) {
+    const auto &token = peek();
 
-        // println("Consuming {}", token.text);
-
-        if (expected.has_value()) {
-          if (expected->index() == 0) {
-            if (get<0>(*expected) != token.text) {
-              throw SyntaxError("Unexpected token: " + token.as_string());
-            }
-          } else {
-            if (!find_in(token.text, get<1>(*expected)))
-              throw SyntaxError("Unexpected token: " + token.text);
-          }
+    if (expected.has_value()) {
+      if (expected->index() == 0) {
+        if (get<0>(*expected) != token.text) {
+          throw SyntaxError("Consume: expected " + get<0>(*expected) +
+                            " but found: " + token.as_string());
         }
+      } else {
+        if (!find_in(token.text, get<1>(*expected)))
+          throw SyntaxError("Consume: Unexpected token: " + token.text);
+      }
+    }
 
-        ++pos;
-        return token;
-      };
+    ++pos;
+    return token;
+  };
 
   auto verify_syntax = [&]() {
     const Kind next = peek().type;
+    if (peek(-1).text == "}")
+      return;
     if (next == Kind::INT_LITERAL || next == Kind::IDENTIFIER) {
-      throw SyntaxError();
+      // cout << peek(-1).text << peek().text << peek(1).text << endl;
+      throw SyntaxError("Unexpected tokens; " + peek().text + peek(1).text);
     }
   };
 
@@ -156,23 +157,38 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
                                  std::move(parse_expr_left_assoc()));
   };
 
-  auto parse_block_content = [&](bool init_block) -> unique_ptr<Expression> {
+  auto parse_block_content =
+      [&](bool explicit_block) -> unique_ptr<Expression> {
     auto expr =
         peek().text == "var" ? parse_variable() : parse_expr_left_assoc();
-    if (peek().text == ";" || init_block) {
+
+    if (explicit_block || peek().text == ";") {
       vector<unique_ptr<Expression>> exprs;
       exprs.push_back(std::move(expr));
 
-      while (peek().text == ";") {
-        consume(nullopt);
-        if (peek().type == Kind::END || peek().text == "}") {
-          exprs.push_back(std::move(make_unique<Literal>(monostate())));
-        } else {
+      while (true) {
+        if (peek().text == ";") {
+          consume(nullopt);
+
+          if (peek().type == Kind::END || peek().text == "}") {
+            exprs.push_back(std::move(make_unique<Literal>(monostate())));
+          } else {
+            exprs.push_back(std::move(parse_expr_left_assoc()));
+          }
+          continue;
+        }
+
+        if (peek().text == "{") {
           auto expr =
               peek().text == "var" ? parse_variable() : parse_expr_left_assoc();
           exprs.push_back(std::move(expr));
+          continue;
         }
+
+        break;
       }
+
+      // cout << *exprs[0] << "parse_block_content " << endl;
       return make_unique<Block>(std::move(exprs));
     }
     return expr;
@@ -180,7 +196,14 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
 
   auto parse_new_block = [&]() -> unique_ptr<Expression> {
     consume("{");
+
+    if (peek(-1).text == "{" && peek().text == "}") {
+      println("Block was empty!");
+      return make_unique<Block>(vector<unique_ptr<Expression>>());
+    }
+
     auto block = parse_block_content(true);
+    // cout << *block << endl;
     consume("}");
     return block;
   };
