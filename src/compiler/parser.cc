@@ -111,6 +111,9 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
       return parse_function(make_unique<Identifier>(token.text));
     }
 
+    if (token.text == "true" || token.text == "false") {
+      return make_unique<Literal>(token.text == "true" ? true : false);
+    }
     return make_unique<Identifier>(token.text);
   };
 
