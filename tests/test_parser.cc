@@ -268,6 +268,12 @@ TEST_CASE("Parser valid input", "[parser]") {
                 "x", make_unique<BinaryOp>(make_unique<Literal>(1), "+",
                                            make_unique<Literal>(2))));
   }
+
+  SECTION("While loops") {
+    REQUIRE(
+        *compiler::parse(compiler::tokenize("while 1 do 2")) ==
+        *make_unique<While>(make_unique<Literal>(1), make_unique<Literal>(2)));
+  }
 }
 
 TEST_CASE("Parser invalid input", "[parser]") {
@@ -323,7 +329,8 @@ TEST_CASE("More edge cases", "[parser-edgecase]") {
     REQUIRE_NOTHROW(
         compiler::parse(compiler::tokenize("if true then { a } b ")));
     // REQUIRE_NOTHROW(
-    //     compiler::parse(compiler::tokenize("{ if true then { f(a) } d(b) }")));
+    //     compiler::parse(compiler::tokenize("{ if true then { f(a) } d(b)
+    //     }")));
     REQUIRE_NOTHROW(
         compiler::parse(compiler::tokenize("if true then { a } b")));
 
@@ -338,14 +345,14 @@ TEST_CASE("More edge cases", "[parser-edgecase]") {
     REQUIRE_NOTHROW(
         compiler::parse(compiler::tokenize("x = { { f(a) } { b } }")));
 
-  SECTION("Should equal") {
-    REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) ==
-            *compiler::parse(compiler::tokenize("{ { x } { y } }")));
-  }
+    SECTION("Should equal") {
+      REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) ==
+              *compiler::parse(compiler::tokenize("{ { x } { y } }")));
+    }
 
-  SECTION("Should NOT equal") {
-    REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) !=
-            *compiler::parse(compiler::tokenize("{ { x }; { y }; }")));
-  }
+    SECTION("Should NOT equal") {
+      REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) !=
+              *compiler::parse(compiler::tokenize("{ { x }; { y }; }")));
+    }
   }
 }

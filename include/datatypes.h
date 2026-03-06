@@ -296,6 +296,28 @@ struct Variable : Expression {
   }
 };
 
+struct While : Expression {
+  std::unique_ptr<Expression> cond;
+  std::unique_ptr<Expression> body;
+
+  explicit While(std::unique_ptr<Expression> c, std::unique_ptr<Expression> b)
+      : cond(std::move(c)), body(std::move(b)) {};
+
+  bool equals(const Expression &other) const override {
+    if (auto *o = dynamic_cast<const While *>(&other)) {
+      return cond->equals(*o->cond) && body->equals(*o->body);
+    };
+    return false;
+  };
+
+  void print(std::ostream &os) const override {
+    os << "While ";
+    cond->print(os);
+    os << " do ";
+    body->print(os);
+  }
+};
+
 inline bool operator==(const Expression &a, const Expression &b) {
   return a.equals(b);
 }

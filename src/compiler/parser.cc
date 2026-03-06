@@ -64,7 +64,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
 
   auto verify_syntax = [&]() {
     const Kind next = peek().type;
-    if (peek(-1).text == "}")
+    if (peek(-1).text == "}" || peek().text == "do")
       return;
     if (next == Kind::INT_LITERAL || next == Kind::IDENTIFIER) {
       // cout << peek(-1).text << peek().text << peek(1).text << endl;
@@ -211,6 +211,13 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return block;
   };
 
+  auto parse_loop = [&]() {
+    consume("while");
+    auto cond = parse_expr_left_assoc();
+    consume("do");
+    return make_unique<While>(std::move(cond), parse_expr_left_assoc());
+  };
+
   parse_factor = [&]() -> unique_ptr<Expression> {
     auto token = peek();
     if (token.text == "(")
@@ -218,6 +225,9 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
 
     if (token.text == "{")
       return parse_new_block();
+
+    if (token.text == "while")
+      return parse_loop();
 
     if (token.type == Kind::OPERATOR)
       return parse_unary();
