@@ -146,7 +146,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
   auto parse_unary = [&]() {
     consume(vector<string_view>{"-", "not"});
     auto op = peek(-1).text;
-    return make_unique<UnaryOp>(op, std::move(parse_factor()));
+    return make_unique<UnaryOp>(op, parse_factor());
   };
 
   auto parse_variable = [&]() {
@@ -157,8 +157,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
                         token.as_string());
     }
     consume("=");
-    return make_unique<Variable>(token.text,
-                                 std::move(parse_expr_left_assoc()));
+    return make_unique<Variable>(token.text, parse_expr_left_assoc());
   };
 
   auto parse_block_content = [&](bool explicit_block) -> UPtrExpr {
