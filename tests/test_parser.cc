@@ -1,13 +1,14 @@
 #ifndef CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_MAIN
-#include <memory>
 #endif
 
 #include <catch2/catch_test_macros.hpp>
-#include <compiler.h>
-#include <datatypes.h>
+#include <memory>
 #include <utility>
 #include <vector>
+
+#include "compiler.h"
+#include "datatypes.h"
 
 using namespace std;
 

@@ -7,8 +7,9 @@
 #include <variant>
 #include <vector>
 
-#include <errors.h>
-#include <util.h>
+#include "errors.h"
+#include "expression.h"
+#include "util.h"
 
 using namespace std;
 
@@ -20,11 +21,11 @@ static const vector<vector<string_view>> la_binary_ops = {
     vector<string_view>{"+", "-"},   vector<string_view>{"*", "/", "%"},
 };
 
-unique_ptr<Expression> parse(const vector<Token> &tokens) {
+UPtrExpr parse(const vector<Token> &tokens) {
   ssize_t pos = 0;
 
-  function<unique_ptr<Expression>()> parse_expr_left_assoc;
-  function<unique_ptr<Expression>()> parse_factor;
+  function<UPtrExpr()> parse_expr_left_assoc;
+  function<UPtrExpr()> parse_factor;
 
   auto peek = [&](ssize_t offset = 0) -> const Token & {
     if (tokens.empty())
@@ -84,7 +85,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
 
   auto parse_function = [&](unique_ptr<Identifier> name) {
     consume("(");
-    vector<unique_ptr<Expression>> args{};
+    vector<UPtrExpr> args{};
 
     if (peek().text != ")") {
       args.emplace_back(parse_expr_left_assoc());
@@ -99,7 +100,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return make_unique<FunctionCall>(std::move(name), std::move(args));
   };
 
-  auto parse_identifier = [&]() -> unique_ptr<Expression> {
+  auto parse_identifier = [&]() -> UPtrExpr {
     if ((pos > 0 && peek(-1).type == Kind::IDENTIFIER) ||
         peek(1).type == Kind::IDENTIFIER) {
       throw SyntaxError("Two identifiers in a row");
@@ -124,7 +125,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return expr;
   };
 
-  auto parse_conditional = [&]() -> unique_ptr<Expression> {
+  auto parse_conditional = [&]() -> UPtrExpr {
     consume("if");
     auto condition = parse_expr_left_assoc();
     consume("then");
@@ -160,13 +161,12 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
                                  std::move(parse_expr_left_assoc()));
   };
 
-  auto parse_block_content =
-      [&](bool explicit_block) -> unique_ptr<Expression> {
+  auto parse_block_content = [&](bool explicit_block) -> UPtrExpr {
     auto expr =
         peek().text == "var" ? parse_variable() : parse_expr_left_assoc();
 
     if (explicit_block || peek().text == ";") {
-      vector<unique_ptr<Expression>> exprs;
+      vector<UPtrExpr> exprs;
       exprs.push_back(std::move(expr));
 
       while (true) {
@@ -174,9 +174,9 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
           consume(nullopt);
 
           if (peek().type == Kind::END || peek().text == "}") {
-            exprs.push_back(std::move(make_unique<Literal>(monostate())));
+            exprs.emplace_back(make_unique<Literal>(monostate()));
           } else {
-            exprs.push_back(std::move(parse_expr_left_assoc()));
+            exprs.emplace_back(parse_expr_left_assoc());
           }
           continue;
         }
@@ -197,12 +197,12 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return expr;
   };
 
-  auto parse_new_block = [&]() -> unique_ptr<Expression> {
+  auto parse_new_block = [&]() -> UPtrExpr {
     consume("{");
 
     if (peek(-1).text == "{" && peek().text == "}") {
       println("Block was empty!");
-      return make_unique<Block>(vector<unique_ptr<Expression>>());
+      return make_unique<Block>(vector<UPtrExpr>());
     }
 
     auto block = parse_block_content(true);
@@ -218,7 +218,7 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
     return make_unique<While>(std::move(cond), parse_expr_left_assoc());
   };
 
-  parse_factor = [&]() -> unique_ptr<Expression> {
+  parse_factor = [&]() -> UPtrExpr {
     auto token = peek();
     if (token.text == "(")
       return parse_parenthesized();
@@ -245,22 +245,21 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
                       token.text);
   };
 
-  auto parse_expr_right_assoc =
-      [&](unique_ptr<Expression> left) -> unique_ptr<Expression> {
+  auto parse_expr_right_assoc = [&](UPtrExpr left) -> UPtrExpr {
     unique_ptr<BinaryOp> right;
 
     while (peek().text.contains("="sv)) {
       const auto token = consume(nullopt);
 
       right = make_unique<BinaryOp>(std::move(left), token.text,
-                                    std::move(parse_expr_left_assoc()));
+                                    parse_expr_left_assoc());
     }
 
     verify_syntax();
     return right;
   };
 
-  parse_expr_left_assoc = [&]() -> unique_ptr<Expression> {
+  parse_expr_left_assoc = [&]() {
     auto left = parse_factor();
 
     for (auto prec_ops = la_binary_ops.rbegin();
@@ -268,8 +267,8 @@ unique_ptr<Expression> parse(const vector<Token> &tokens) {
       while (find_in(peek().text, *prec_ops)) {
         const auto token = consume(nullopt);
 
-        left = make_unique<BinaryOp>(std::move(left), token.text,
-                                     std::move(parse_factor()));
+        left =
+            make_unique<BinaryOp>(std::move(left), token.text, parse_factor());
       }
     }
 
