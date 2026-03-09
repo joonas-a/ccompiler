@@ -5,10 +5,12 @@
 
 #include "datatypes.h"
 #include "expression.h"
+#include "typecheck.h"
 
 namespace compiler {
 
 std::vector<Token> tokenize(const std::string_view input);
-std::unique_ptr<Expression> parse(const std::vector<Token> &tokens);
+UPtrExpr parse(const std::vector<Token> &tokens);
+C_type typecheck(UPtrExpr &root);
 
 } // namespace compiler

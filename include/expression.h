@@ -6,9 +6,11 @@
 #include <variant>
 #include <vector>
 
-#include "datatypes.h"
+#include "typecheck.h"
 
 struct TypeChecker;
+
+// TODO: Move logic out of header
 
 struct Expression {
   virtual ~Expression() = default;

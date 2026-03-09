@@ -1,6 +1,4 @@
-#include <vector>
-
-#include "datatypes.h"
+#include "typecheck.h"
 
 Scope initialize_globals() {
   return Scope{{"+",
