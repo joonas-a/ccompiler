@@ -1,14 +1,21 @@
 #pragma once
+
 #include <algorithm>
 #include <memory>
 #include <ostream>
 #include <variant>
 #include <vector>
 
+#include "datatypes.h"
+
+struct TypeChecker;
+
 struct Expression {
   virtual ~Expression() = default;
   virtual bool equals(const Expression &other) const = 0;
   virtual void print(std::ostream &os) const = 0;
+
+  virtual C_type accept(TypeChecker &tc) const = 0;
 };
 
 using UPtrExpr = std::unique_ptr<Expression>;
@@ -19,6 +26,8 @@ struct Literal : Expression {
   explicit Literal(int i) : value(i) {};
   explicit Literal(bool x) : value(x) {};
   explicit Literal(std::monostate u) : value(u) {};
+
+  C_type accept(TypeChecker &tc) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Literal *>(&other)) {
@@ -47,6 +56,8 @@ struct Identifier : Expression {
 
   explicit Identifier(std::string x) : value(std::move(x)) {};
 
+  C_type accept(TypeChecker &tc) const override;
+
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Identifier *>(&other)) {
       return value == o->value;
@@ -63,6 +74,8 @@ struct FunctionCall : Expression {
 
   explicit FunctionCall(std::unique_ptr<Identifier> x, std::vector<UPtrExpr> a)
       : name(std::move(x)), args(std::move(a)) {};
+
+  C_type accept(TypeChecker &tc) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const FunctionCall *>(&other)) {
@@ -95,6 +108,8 @@ struct UnaryOp : Expression {
 
   explicit UnaryOp(std::string o, UPtrExpr e) : op(o), expr(std::move(e)) {};
 
+  C_type accept(TypeChecker &tc) const override;
+
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const UnaryOp *>(&other)) {
       return op == o->op && expr->equals(*o->expr);
@@ -116,6 +131,8 @@ struct BinaryOp : Expression {
 
   explicit BinaryOp(UPtrExpr l, std::string o, UPtrExpr r)
       : lhs(std::move(l)), op(o), rhs(std::move(r)) {};
+
+  C_type accept(TypeChecker &tc) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const BinaryOp *>(&other)) {
@@ -139,6 +156,8 @@ struct IfThenStatement : Expression {
 
   explicit IfThenStatement(UPtrExpr c, UPtrExpr t)
       : condition(std::move(c)), then_branch(std::move(t)) {};
+
+  C_type accept(TypeChecker &tc) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const IfThenStatement *>(&other)) {
@@ -164,6 +183,8 @@ struct IfThenElseStatement : Expression {
       : condition(std::move(c)), then_branch(std::move(t)),
         else_branch(std::move(e)) {}
 
+  C_type accept(TypeChecker &tc) const override;
+
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const IfThenElseStatement *>(&other)) {
       return condition->equals(*o->condition) &&
@@ -186,6 +207,8 @@ struct Block : Expression {
   std::vector<UPtrExpr> exprs;
 
   explicit Block(std::vector<UPtrExpr> e) : exprs(std::move(e)) {};
+
+  C_type accept(TypeChecker &tc) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Block *>(&other)) {
@@ -217,6 +240,8 @@ struct Variable : Expression {
   explicit Variable(std::string n, UPtrExpr v)
       : name(std::move(n)), value(std::move(v)) {};
 
+  C_type accept(TypeChecker &tc) const override;
+
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Variable *>(&other)) {
       return name == o->name && value->equals(*o->value);
@@ -237,6 +262,8 @@ struct While : Expression {
 
   explicit While(UPtrExpr c, UPtrExpr b)
       : cond(std::move(c)), body(std::move(b)) {};
+
+  C_type accept(TypeChecker &tc) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const While *>(&other)) {

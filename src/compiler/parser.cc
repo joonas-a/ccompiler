@@ -157,7 +157,8 @@ UPtrExpr parse(const vector<Token> &tokens) {
                         token.as_string());
     }
     consume("=");
-    return make_unique<Variable>(token.text, parse_expr_left_assoc());
+    return make_unique<Variable>(token.text,
+                                 parse_expr_left_assoc());
   };
 
   auto parse_block_content = [&](bool explicit_block) -> UPtrExpr {

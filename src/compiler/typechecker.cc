@@ -1,0 +1,217 @@
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <variant>
+
+#include "datatypes.h"
+#include "expression.h"
+
+using namespace std;
+
+struct SymTab {
+  vector<Scope> stack;
+
+  void add_scope() { stack.emplace_back(); }
+  void remove_scope() { stack.pop_back(); }
+
+  void add(string name, SymEntry symbol) {
+    stack.back().emplace(std::move(name), std::move(symbol));
+  }
+  void initialize(Scope &&globals) {
+    stack.clear();
+    stack.emplace_back(std::move(globals));
+  }
+
+  const SymEntry *lookup(const string &key) const {
+    if (auto it = stack.rbegin(); it != stack.rend())
+      if (auto search = it->find(key); search != it->end())
+        return &search->second;
+
+    return nullptr;
+  }
+
+  const bool localKeyExists(const string &key) const {
+    return stack.back().contains(key);
+  }
+};
+
+struct TypeChecker {
+  SymTab &symTab;
+
+  explicit TypeChecker(SymTab &st) : symTab(st) {};
+
+  C_type visit(const Literal &e);
+  C_type visit(const Identifier &e);
+  C_type visit(const UnaryOp &e);
+  C_type visit(const BinaryOp &e);
+  C_type visit(const FunctionCall &e);
+  C_type visit(const IfThenStatement &e);
+  C_type visit(const IfThenElseStatement &e);
+  C_type visit(const Block &e);
+  C_type visit(const Variable &e);
+  C_type visit(const While &e);
+};
+
+C_type Literal::accept(TypeChecker &tc) const { return tc.visit(*this); }
+C_type Identifier::accept(TypeChecker &tc) const { return tc.visit(*this); }
+C_type UnaryOp::accept(TypeChecker &tc) const { return tc.visit(*this); }
+C_type BinaryOp::accept(TypeChecker &tc) const { return tc.visit(*this); }
+C_type FunctionCall::accept(TypeChecker &tc) const { return tc.visit(*this); }
+C_type IfThenStatement::accept(TypeChecker &tc) const {
+  return tc.visit(*this);
+}
+C_type IfThenElseStatement::accept(TypeChecker &tc) const {
+  return tc.visit(*this);
+}
+C_type Block::accept(TypeChecker &tc) const { return tc.visit(*this); }
+C_type Variable::accept(TypeChecker &tc) const { return tc.visit(*this); }
+C_type While::accept(TypeChecker &tc) const { return tc.visit(*this); }
+
+C_type TypeChecker::visit(const Literal &e) {
+  return std::visit(
+      [](const auto &arg) {
+        using T = decay_t<decltype(arg)>;
+        if constexpr (is_same_v<T, int>)
+          return C_type::C_int;
+        else if constexpr (is_same_v<T, bool>)
+          return C_type::C_bool;
+        else if constexpr (is_same_v<T, monostate>)
+          return C_type::C_unit;
+        else
+          throw runtime_error("Unexpected literal");
+      },
+      e.value);
+}
+
+C_type TypeChecker::visit(const BinaryOp &e) {
+  const auto lhs_t = e.lhs->accept(*this);
+  const auto rhs_t = e.rhs->accept(*this);
+
+  const auto typing = get_if<FnType>(this->symTab.lookup(e.op));
+
+  if (typing) {
+    if (lhs_t == typing->at(0) && rhs_t == typing->at(1))
+      return typing->at(2);
+    throw runtime_error("Invalid args: BinaryOp");
+  }
+
+  if ((e.op == "==" || e.op == "!=") && lhs_t != rhs_t)
+    throw runtime_error("Non matching arg type with equality check");
+
+  throw runtime_error("Unexpected function");
+}
+
+C_type TypeChecker::visit(const UnaryOp &e) {
+  const auto ct = e.expr->accept(*this);
+
+  const auto typing = get_if<FnType>(this->symTab.lookup(e.op));
+
+  if (typing) {
+    if (ct == typing->at(0))
+      return typing->at(1);
+  }
+  throw runtime_error("Unexpected arg: UnaryOp");
+}
+
+C_type TypeChecker::visit(const IfThenStatement &e) {
+  const auto cond = e.condition->accept(*this);
+
+  if (cond != C_type::C_bool)
+    throw runtime_error("Condition must resolve to a boolean");
+
+  return C_type::C_unit;
+}
+
+C_type TypeChecker::visit(const IfThenElseStatement &e) {
+  const auto cond_t = e.condition->accept(*this);
+  const auto then_t = e.then_branch->accept(*this);
+  const auto else_t = e.else_branch->accept(*this);
+
+  if (cond_t != C_type::C_bool)
+    throw runtime_error("Condition must resolve to a boolean");
+
+  if (then_t != else_t)
+    throw runtime_error("Conditional branches must resolve to a same type");
+
+  return then_t;
+}
+
+C_type TypeChecker::visit(const Block &e) {
+  this->symTab.add_scope();
+
+  if (e.exprs.empty())
+    return C_type::C_unit;
+
+  for (size_t i = 0; i < e.exprs.size() - 1; ++i)
+    e.exprs[i]->accept(*this);
+
+  auto block_t = e.exprs.back()->accept(*this);
+
+  this->symTab.remove_scope();
+  return block_t;
+}
+
+C_type TypeChecker::visit(const While &e) {
+  auto cond = e.cond->accept(*this);
+
+  if (cond != C_type::C_bool)
+    throw runtime_error("Condition must resolve to a boolean");
+
+  e.body->accept(*this);
+
+  return C_type::C_unit;
+}
+
+C_type TypeChecker::visit(const Variable &e) {
+  auto name = e.name;
+  if (this->symTab.localKeyExists(name))
+    throw runtime_error("Attempted to re-declare a local variable");
+
+  this->symTab.add(name, e.value->accept(*this));
+
+  return C_type::C_unit;
+}
+
+C_type TypeChecker::visit(const Identifier &e) {
+  auto symEntry = this->symTab.lookup(e.value);
+
+  if (!symEntry)
+    throw runtime_error("Variable not declared or unidentified identifier");
+
+  if (symEntry->index() == 0)
+    return get<0>(*symEntry);
+
+  return get<1>(*symEntry).back();
+}
+
+C_type TypeChecker::visit(const FunctionCall &e) {
+  auto symEntry = this->symTab.lookup(e.name->value);
+
+  if (!symEntry)
+    throw runtime_error("Function with given name was not found");
+
+  if (symEntry->index() == 0)
+    throw runtime_error("Variable did not contain a function call");
+
+  auto expected = get<FnType>(*symEntry);
+
+  if (expected.size() - 1 != e.args.size())
+    throw runtime_error("Function received incorrect amount of arguments");
+
+  for (size_t i = 0; i < e.args.size(); ++i)
+    if (e.args[i]->accept(*this) != expected[i])
+      throw runtime_error("Non-matching function "
+                          "argument");
+
+  return expected.back();
+}
+
+auto typecheck(UPtrExpr &root) -> C_type {
+  SymTab SymbolTable{};
+  SymbolTable.initialize(initialize_globals());
+
+  TypeChecker tc{SymbolTable};
+
+  return root->accept(tc);
+}
