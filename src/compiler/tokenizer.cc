@@ -29,11 +29,11 @@ static constexpr Kind get_type(std::string_view text) {
   if (contains(kOperators, text))
     return Kind::OPERATOR;
   if (contains(kConditionals, text))
-    return Kind::PUNCTUATOR;
-  if (contains(kPunctuators, text))
-    return Kind::COMMENT;
-  if (contains(kComments, text))
     return Kind::CONDITIONAL;
+  if (contains(kPunctuators, text))
+    return Kind::PUNCTUATOR;
+  if (contains(kComments, text))
+    return Kind::COMMENT;
 
   return Kind::IDENTIFIER;
 }
@@ -43,7 +43,7 @@ namespace compiler {
 std::vector<Token> tokenize(const std::string_view input) {
   std::vector<Token> all_tokens;
 
-  constexpr auto delim{'\n'};
+  constexpr auto delim{std::string{"\n"}};
   const auto tokenizer_regex =
       std::regex("[a-zA-Z_]+[a-zA-Z_0-9]*|[0-9]+|//|==|!=|<=|>"
                  "=|[//+-//*/%=<>//(//)//{//},;#]{1}");

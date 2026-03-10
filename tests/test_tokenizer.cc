@@ -3,10 +3,11 @@
 #endif
 
 #include <catch2/catch_test_macros.hpp>
-#include <compiler.h>
-#include <datatypes.h>
 #include <string>
 #include <vector>
+
+#include "compiler.h"
+#include "datatypes.h"
 
 using namespace std;
 
