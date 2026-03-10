@@ -8,6 +8,8 @@
 
 #include "typecheck.h"
 
+namespace compiler {
+
 struct TypeChecker;
 
 // TODO: Move logic out of header
@@ -290,3 +292,5 @@ inline std::ostream &operator<<(std::ostream &os, const Expression &e) {
   e.print(os);
   return os;
 }
+
+} // namespace compiler

@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -5,17 +6,21 @@
 #include <variant>
 
 #include "expression.h"
+#include "typecheck.h"
 
 using namespace std;
 
+namespace compiler {
+
 struct SymTab {
-  vector<Scope> stack;
+  vector<Scope> stack{};
 
   void add_scope() { stack.emplace_back(); }
   void remove_scope() { stack.pop_back(); }
 
-  void add(string name, SymEntry symbol) {
-    stack.back().emplace(std::move(name), std::move(symbol));
+  void add(string name, C_type symbol) {
+    println("Adding {} with enum val {}", name, static_cast<int>(symbol));
+    stack.back().emplace(std::move(name), symbol);
   }
   void initialize(Scope &&globals) {
     stack.clear();
@@ -23,14 +28,14 @@ struct SymTab {
   }
 
   const SymEntry *lookup(const string &key) const {
-    if (auto it = stack.rbegin(); it != stack.rend())
+    for (auto it = stack.rbegin(); it != stack.rend(); ++it)
       if (auto search = it->find(key); search != it->end())
         return &search->second;
 
     return nullptr;
   }
 
-  const bool localKeyExists(const string &key) const {
+  const bool local_key_exists(const string &key) const {
     return stack.back().contains(key);
   }
 };
@@ -92,13 +97,17 @@ C_type TypeChecker::visit(const BinaryOp &e) {
   if (typing) {
     if (lhs_t == typing->at(0) && rhs_t == typing->at(1))
       return typing->at(2);
+
     throw runtime_error("Invalid args: BinaryOp");
   }
 
   if ((e.op == "==" || e.op == "!=") && lhs_t != rhs_t)
     throw runtime_error("Non matching arg type with equality check");
 
-  throw runtime_error("Unexpected function");
+  println("Unknown binaryop for: {} {} {}", static_cast<int>(lhs_t), e.op,
+          static_cast<int>(rhs_t));
+
+  throw runtime_error("Unknown BinaryOp");
 }
 
 C_type TypeChecker::visit(const UnaryOp &e) {
@@ -164,10 +173,22 @@ C_type TypeChecker::visit(const While &e) {
 
 C_type TypeChecker::visit(const Variable &e) {
   auto name = e.name;
-  if (this->symTab.localKeyExists(name))
+
+  if (this->symTab.local_key_exists(name))
     throw runtime_error("Attempted to re-declare a local variable");
 
+  auto tmp = e.value->accept(*this);
+
   this->symTab.add(name, e.value->accept(*this));
+
+  for (auto x : this->symTab.stack.back()) {
+    auto tmp = get_if<C_type>(&x.second);
+    if (tmp) {
+      cout << x.first << static_cast<int>(*tmp) << "\n";
+    }
+  }
+
+  println("Assigned var, returning now");
 
   return C_type::C_unit;
 }
@@ -178,10 +199,13 @@ C_type TypeChecker::visit(const Identifier &e) {
   if (!symEntry)
     throw runtime_error("Variable not declared or unidentified identifier");
 
-  if (symEntry->index() == 0)
-    return get<0>(*symEntry);
+  if (symEntry->index() == 0) {
+    auto tmp = get<C_type>(*symEntry);
+    println("Fetched and will now return {}", static_cast<int>(tmp));
+    return tmp;
+  }
 
-  return get<1>(*symEntry).back();
+  return get<FnType>(*symEntry).back();
 }
 
 C_type TypeChecker::visit(const FunctionCall &e) {
@@ -214,3 +238,5 @@ auto typecheck(UPtrExpr &root) -> C_type {
 
   return root->accept(tc);
 }
+
+} // namespace compiler

@@ -1,5 +1,6 @@
 #ifndef CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_MAIN
+#include <string_view>
 #endif
 
 #include <catch2/catch_test_macros.hpp>
@@ -10,111 +11,113 @@
 #include "compiler.h"
 #include "datatypes.h"
 
-using namespace std;
+using namespace compiler;
+using std::make_unique, std::vector, std::string_view;
 
 const Loc L{SIZE_T_MAX, SIZE_T_MAX};
 
+auto parse(string_view input) {
+  return compiler::parse(compiler::tokenize(input));
+}
+
 TEST_CASE("Parser valid input", "[parser]") {
   SECTION("Single literal") {
-    REQUIRE(*compiler::parse(compiler::tokenize("1")) ==
-            *make_unique<Literal>(1));
-    REQUIRE(*compiler::parse(compiler::tokenize("123")) ==
-            *make_unique<Literal>(123));
-    REQUIRE(*compiler::parse(compiler::tokenize("abcd")) ==
-            *make_unique<Identifier>("abcd"));
+    REQUIRE(*parse("1") == *make_unique<Literal>(1));
+    REQUIRE(*parse("123") == *make_unique<Literal>(123));
+    REQUIRE(*parse("abcd") == *make_unique<Identifier>("abcd"));
   }
 
   SECTION("Binary ops +, -") {
-    REQUIRE(*compiler::parse(compiler::tokenize("2+550")) ==
+    REQUIRE(*parse("2+550") ==
             *make_unique<BinaryOp>(make_unique<Literal>(2), "+",
                                    make_unique<Literal>(550)));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("310-999")) ==
+    REQUIRE(*parse("310-999") ==
             *make_unique<BinaryOp>(make_unique<Literal>(310), "-",
                                    make_unique<Literal>(999)));
   }
 
   SECTION("Binary ops *, %") {
-    REQUIRE(*compiler::parse(compiler::tokenize("2*550")) ==
+    REQUIRE(*parse("2*550") ==
             *make_unique<BinaryOp>(make_unique<Literal>(2), "*",
                                    make_unique<Literal>(550)));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("310 / 999")) ==
+    REQUIRE(*parse("310 / 999") ==
             *make_unique<BinaryOp>(make_unique<Literal>(310), "/",
                                    make_unique<Literal>(999)));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("310 % 999")) ==
+    REQUIRE(*parse("310 % 999") ==
             *make_unique<BinaryOp>(make_unique<Literal>(310), "%",
                                    make_unique<Literal>(999)));
   }
 
   SECTION("Binary ops <, <=, >, >=") {
-    REQUIRE(*compiler::parse(compiler::tokenize("2<550")) ==
+    REQUIRE(*parse("2<550") ==
             *make_unique<BinaryOp>(make_unique<Literal>(2), "<",
                                    make_unique<Literal>(550)));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("31 <= 32")) ==
+    REQUIRE(*parse("31 <= 32") ==
             *make_unique<BinaryOp>(make_unique<Literal>(31),
                                    "<=", make_unique<Literal>(32)));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("b>a")) ==
+    REQUIRE(*parse("b>a") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("b"), ">",
                                    make_unique<Identifier>("a")));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("b>=b")) ==
+    REQUIRE(*parse("b>=b") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("b"),
                                    ">=", make_unique<Identifier>("b")));
   }
 
   SECTION("Binary ops !=, ==") {
-    REQUIRE(*compiler::parse(compiler::tokenize("b != a")) ==
+    REQUIRE(*parse("b != a") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("b"),
                                    "!=", make_unique<Identifier>("a")));
-    REQUIRE(*compiler::parse(compiler::tokenize("3 == 3")) ==
+    REQUIRE(*parse("3 == 3") ==
             *make_unique<BinaryOp>(make_unique<Literal>(3),
                                    "==", make_unique<Literal>(3)));
   }
 
   SECTION("Binary ops and, or") {
-    REQUIRE(*compiler::parse(compiler::tokenize("b and a")) ==
+    REQUIRE(*parse("b and a") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("b"), "and",
                                    make_unique<Identifier>("a")));
-    REQUIRE(*compiler::parse(compiler::tokenize("c or d")) ==
+    REQUIRE(*parse("c or d") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("c"), "or",
                                    make_unique<Identifier>("d")));
   }
 
   SECTION("Unary ops -, not") {
-    REQUIRE(*compiler::parse(compiler::tokenize("not 2")) ==
+    REQUIRE(*parse("not 2") ==
             *make_unique<UnaryOp>("not", make_unique<Literal>(2)));
-    REQUIRE(*compiler::parse(compiler::tokenize("- 2")) ==
+    REQUIRE(*parse("- 2") ==
             *make_unique<UnaryOp>("-", make_unique<Literal>(2)));
-    REQUIRE(*compiler::parse(compiler::tokenize("b and not a")) ==
+    REQUIRE(*parse("b and not a") ==
             *make_unique<BinaryOp>(
                 make_unique<Identifier>("b"), "and",
                 make_unique<UnaryOp>("not", make_unique<Identifier>("a"))));
-    REQUIRE(*compiler::parse(compiler::tokenize("b and not-a")) ==
+    REQUIRE(*parse("b and not-a") ==
             *make_unique<BinaryOp>(
                 make_unique<Identifier>("b"), "and",
                 make_unique<UnaryOp>(
                     "not",
                     make_unique<UnaryOp>("-", make_unique<Identifier>("a")))));
-    REQUIRE(*compiler::parse(compiler::tokenize("1--2")) ==
+    REQUIRE(*parse("1--2") ==
             *make_unique<BinaryOp>(
                 make_unique<Literal>(1), "-",
                 make_unique<UnaryOp>("-", make_unique<Literal>(2))));
-    REQUIRE(*compiler::parse(compiler::tokenize("-1-1")) ==
+    REQUIRE(*parse("-1-1") ==
             *make_unique<BinaryOp>(
                 make_unique<UnaryOp>("-", make_unique<Literal>(1)), "-",
                 make_unique<Literal>(1)));
   }
 
   SECTION("Parenthesised input") {
-    REQUIRE(*compiler::parse(compiler::tokenize("(a+b)")) ==
+    REQUIRE(*parse("(a+b)") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("a"), "+",
                                    make_unique<Identifier>("b")));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("(a+b)*c")) ==
+    REQUIRE(*parse("(a+b)*c") ==
             *make_unique<BinaryOp>(
                 make_unique<BinaryOp>(make_unique<Identifier>("a"), "+",
                                       make_unique<Identifier>("b")),
@@ -122,18 +125,17 @@ TEST_CASE("Parser valid input", "[parser]") {
   }
 
   SECTION("If then else") {
-    REQUIRE(*compiler::parse(compiler::tokenize("if a then b else c")) ==
+    REQUIRE(*parse("if a then b else c") ==
             *make_unique<IfThenElseStatement>(make_unique<Identifier>("a"),
                                               make_unique<Identifier>("b"),
                                               make_unique<Identifier>("c")));
-    REQUIRE(
-        *compiler::parse(compiler::tokenize("if a then 1 + c else x * 2")) ==
-        *make_unique<IfThenElseStatement>(
-            make_unique<Identifier>("a"),
-            make_unique<BinaryOp>(make_unique<Literal>(1), "+",
-                                  make_unique<Identifier>("c")),
-            make_unique<BinaryOp>(make_unique<Identifier>("x"), "*",
-                                  make_unique<Literal>(2))));
+    REQUIRE(*parse("if a then 1 + c else x * 2") ==
+            *make_unique<IfThenElseStatement>(
+                make_unique<Identifier>("a"),
+                make_unique<BinaryOp>(make_unique<Literal>(1), "+",
+                                      make_unique<Identifier>("c")),
+                make_unique<BinaryOp>(make_unique<Identifier>("x"), "*",
+                                      make_unique<Literal>(2))));
 
     REQUIRE(*compiler::parse(
                 compiler::tokenize("if a then (1 + c) * 3 else x * 2")) ==
@@ -168,15 +170,15 @@ TEST_CASE("Parser valid input", "[parser]") {
   }
 
   SECTION("Assignment =") {
-    REQUIRE(*compiler::parse(compiler::tokenize("a = b")) ==
+    REQUIRE(*parse("a = b") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("a"), "=",
                                    make_unique<Identifier>("b")));
-    REQUIRE(*compiler::parse(compiler::tokenize("a = b = c")) ==
+    REQUIRE(*parse("a = b = c") ==
             *make_unique<BinaryOp>(
                 make_unique<Identifier>("a"), "=",
                 make_unique<BinaryOp>(make_unique<Identifier>("b"), "=",
                                       make_unique<Identifier>("c"))));
-    REQUIRE(*compiler::parse(compiler::tokenize("1 * 1 = 2 % 2 = 0")) ==
+    REQUIRE(*parse("1 * 1 = 2 % 2 = 0") ==
             *make_unique<BinaryOp>(
                 make_unique<BinaryOp>(make_unique<Literal>(1), "*",
                                       make_unique<Literal>(1)),
@@ -191,12 +193,12 @@ TEST_CASE("Parser valid input", "[parser]") {
     auto args = std::vector<std::unique_ptr<Expression>>{};
 
     args.emplace_back(std::make_unique<Identifier>("a"));
-    REQUIRE(*compiler::parse(compiler::tokenize("f(a)")) ==
+    REQUIRE(*parse("f(a)") ==
             *make_unique<FunctionCall>(make_unique<Identifier>("f"),
                                        std::move(args)));
 
     args.clear();
-    REQUIRE(*compiler::parse(compiler::tokenize("f()")) ==
+    REQUIRE(*parse("f()") ==
             *make_unique<FunctionCall>(make_unique<Identifier>("f"),
                                        std::move(args)));
 
@@ -204,7 +206,7 @@ TEST_CASE("Parser valid input", "[parser]") {
     args.emplace_back(std::make_unique<BinaryOp>(
         std::make_unique<Literal>(10), "*", std::make_unique<Literal>(5)));
     args.emplace_back(std::make_unique<Identifier>("a"));
-    REQUIRE(*compiler::parse(compiler::tokenize("plus_fifty(10*5,a)")) ==
+    REQUIRE(*parse("plus_fifty(10*5,a)") ==
             *make_unique<FunctionCall>(make_unique<Identifier>("plus_fifty"),
                                        std::move(args)));
   }
@@ -214,7 +216,7 @@ TEST_CASE("Parser valid input", "[parser]") {
     exprs.emplace_back(make_unique<Identifier>("a"));
     auto block = make_unique<Block>(std::move(exprs));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("{a}")) == *block);
+    REQUIRE(*parse("{a}") == *block);
 
     exprs.clear();
     auto inner_exprs = std::vector<std::unique_ptr<Expression>>{};
@@ -222,8 +224,7 @@ TEST_CASE("Parser valid input", "[parser]") {
     auto inner_block = std::make_unique<Block>(std::move(inner_exprs));
     exprs.emplace_back(std::move(inner_block));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("{{a}}")) ==
-            *make_unique<Block>(std::move(exprs)));
+    REQUIRE(*parse("{{a}}") == *make_unique<Block>(std::move(exprs)));
 
     exprs.clear();
     inner_exprs.clear();
@@ -232,23 +233,20 @@ TEST_CASE("Parser valid input", "[parser]") {
     exprs.emplace_back(make_unique<Identifier>("a"));
     exprs.emplace_back(std::move(inner_block));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("{a;{b}}")) ==
-            *make_unique<Block>(std::move(exprs)));
+    REQUIRE(*parse("{a;{b}}") == *make_unique<Block>(std::move(exprs)));
 
     exprs.clear();
     exprs.emplace_back(make_unique<BinaryOp>(make_unique<Identifier>("a"), "+",
                                              make_unique<Identifier>("b")));
     exprs.emplace_back(make_unique<Literal>(std::monostate()));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("a+b;")) ==
-            *make_unique<Block>(std::move(exprs)));
+    REQUIRE(*parse("a+b;") == *make_unique<Block>(std::move(exprs)));
 
     exprs.clear();
     exprs.emplace_back(make_unique<Literal>(1));
     exprs.emplace_back(make_unique<Literal>(2));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("1;2")) ==
-            *make_unique<Block>(std::move(exprs)));
+    REQUIRE(*parse("1;2") == *make_unique<Block>(std::move(exprs)));
 
     exprs.clear();
     exprs.emplace_back(make_unique<Identifier>("a"));
@@ -256,15 +254,14 @@ TEST_CASE("Parser valid input", "[parser]") {
                                              make_unique<Literal>(2)));
     exprs.emplace_back(make_unique<Identifier>("z"));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("{a;x=2;z}")) ==
-            *make_unique<Block>(std::move(exprs)));
+    REQUIRE(*parse("{a;x=2;z}") == *make_unique<Block>(std::move(exprs)));
   }
 
   SECTION("Variable declarations") {
-    REQUIRE(*compiler::parse(compiler::tokenize("var x = 123")) ==
+    REQUIRE(*parse("var x = 123") ==
             *make_unique<Variable>("x", make_unique<Literal>(123)));
 
-    REQUIRE(*compiler::parse(compiler::tokenize("var x = 1 + 2")) ==
+    REQUIRE(*parse("var x = 1 + 2") ==
             *make_unique<Variable>(
                 "x", make_unique<BinaryOp>(make_unique<Literal>(1), "+",
                                            make_unique<Literal>(2))));
@@ -272,7 +269,7 @@ TEST_CASE("Parser valid input", "[parser]") {
 
   SECTION("While loops") {
     REQUIRE(
-        *compiler::parse(compiler::tokenize("while 1 do 2")) ==
+        *parse("while 1 do 2") ==
         *make_unique<While>(make_unique<Literal>(1), make_unique<Literal>(2)));
   }
 }
@@ -284,76 +281,59 @@ TEST_CASE("Parser invalid input", "[parser]") {
   }
 
   SECTION("Trash at the end") {
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("a b")));
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("a+b c")));
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("(a+b) c")));
+    REQUIRE_THROWS(parse("a b"));
+    REQUIRE_THROWS(parse("a+b c"));
+    REQUIRE_THROWS(parse("(a+b) c"));
   }
 
-  SECTION("Trash at the start") {
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("a b + c")));
-  }
+  SECTION("Trash at the start") { REQUIRE_THROWS(parse("a b + c")); }
 
-  SECTION("Trash in the middle") {
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("a+b c*d")));
-  }
+  SECTION("Trash in the middle") { REQUIRE_THROWS(parse("a+b c*d")); }
 
-  SECTION("Unterminated if") {
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("if a")));
-  }
+  SECTION("Unterminated if") { REQUIRE_THROWS(parse("if a")); }
 
-  SECTION("Else before then") {
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("if a else b")));
-  }
+  SECTION("Else before then") { REQUIRE_THROWS(parse("if a else b")); }
   SECTION("Unterminated function call") {
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("f(a, b, c")));
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("f(")));
+    REQUIRE_THROWS(parse("f(a, b, c"));
+    REQUIRE_THROWS(parse("f("));
   }
   SECTION("Non-top level variable calls") {
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("a = var b")));
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("if a then var b = 1")));
-    REQUIRE_THROWS(
-        compiler::parse(compiler::tokenize("{a;b;a and var c = 1;}")));
+    REQUIRE_THROWS(parse("a = var b"));
+    REQUIRE_THROWS(parse("if a then var b = 1"));
+    REQUIRE_THROWS(parse("{a;b;a and var c = 1;}"));
   }
 }
 
 TEST_CASE("More edge cases", "[parser-edgecase]") {
   SECTION("Should fail") {
-    REQUIRE_THROWS(compiler::parse(compiler::tokenize("{ a b }")));
-    REQUIRE_THROWS(
-        compiler::parse(compiler::tokenize("{ if true then { a } b c }")));
+    REQUIRE_THROWS(parse("{ a b }"));
+    REQUIRE_THROWS(parse("{ if true then { a } b c }"));
   }
 
   SECTION("Should parse") {
-    REQUIRE_NOTHROW(compiler::parse(compiler::tokenize("{}")));
-    REQUIRE_NOTHROW(compiler::parse(compiler::tokenize("{ { a } { b } }")));
-    REQUIRE_NOTHROW(compiler::parse(compiler::tokenize("{ a } { b }")));
-    REQUIRE_NOTHROW(
-        compiler::parse(compiler::tokenize("if true then { a } b ")));
+    REQUIRE_NOTHROW(parse("{}"));
+    REQUIRE_NOTHROW(parse("{ { a } { b } }"));
+    REQUIRE_NOTHROW(parse("{ a } { b }"));
+    REQUIRE_NOTHROW(parse("if true then { a } b "));
     // REQUIRE_NOTHROW(
-    //     compiler::parse(compiler::tokenize("{ if true then { f(a) } d(b)
+    //     helper("{ if true then { f(a } d(b)
     //     }")));
-    REQUIRE_NOTHROW(
-        compiler::parse(compiler::tokenize("if true then { a } b")));
+    REQUIRE_NOTHROW(parse("if true then { a } b"));
 
-    REQUIRE_NOTHROW(
-        compiler::parse(compiler::tokenize("{ if true then { a }; b }")));
-    REQUIRE_NOTHROW(
-        compiler::parse(compiler::tokenize("if true then { a } b; c")));
+    REQUIRE_NOTHROW(parse("{ if true then { a }; b }"));
+    REQUIRE_NOTHROW(parse("if true then { a } b; c"));
     // REQUIRE_NOTHROW(
-    //     compiler::parse(compiler::tokenize("{ if true then { a }; b; c }")));
+    //     helper("{ if true then { a }; b; c }"));
     // REQUIRE_NOTHROW(compiler::parse(
     //     compiler::tokenize("{ if true then { a } else { b } c }")));
-    REQUIRE_NOTHROW(
-        compiler::parse(compiler::tokenize("x = { { f(a) } { b } }")));
+    REQUIRE_NOTHROW(parse("x = { { f(a) } { b } }"));
 
     SECTION("Should equal") {
-      REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) ==
-              *compiler::parse(compiler::tokenize("{ { x } { y } }")));
+      REQUIRE(*parse("{ { x }; { y } }") == *parse("{ { x } { y } }"));
     }
 
     SECTION("Should NOT equal") {
-      REQUIRE(*compiler::parse(compiler::tokenize("{ { x }; { y } }")) !=
-              *compiler::parse(compiler::tokenize("{ { x }; { y }; }")));
+      REQUIRE(*parse("{ { x }; { y } }") != *parse("{ { x }; { y }; }"));
     }
   }
 }
