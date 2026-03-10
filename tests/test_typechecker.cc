@@ -7,7 +7,6 @@
 #include <string_view>
 
 #include "compiler.h"
-#include "typecheck.h"
 
 using std::string_view;
 
@@ -24,5 +23,10 @@ TEST_CASE("Typechecker", "[typechecker]") {
     REQUIRE(check("if true then true else false") == C_type::C_bool);
     REQUIRE(check("var a = 5") == C_type::C_unit);
     REQUIRE(check("var b = 5; b + 2") == C_type::C_int);
+    REQUIRE(check("{ { var b = 5; b + 2 } }") == C_type::C_int);
+    REQUIRE(check("if 1<2 then 1") == C_type::C_unit);
+    REQUIRE(check("1 < 2") == C_type::C_bool);
   }
+
+  SECTION("Should not pass") { REQUIRE_THROWS(check("{var a = 10}; a + 10")); }
 }

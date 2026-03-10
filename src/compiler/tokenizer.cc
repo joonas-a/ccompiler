@@ -1,5 +1,5 @@
 #include <algorithm>
-#include <cstdio>
+#include <cctype>
 #include <print>
 #include <ranges>
 #include <regex>
@@ -8,27 +8,31 @@
 
 #include "datatypes.h"
 
-using namespace std;
+constexpr std::array<std::string_view, 15> kOperators = {
+    "+",  "-", "*", "/", "=",   "==", "!=", "<=",
+    ">=", "<", ">", "%", "and", "or", "not"};
+constexpr std::array<std::string_view, 6> kPunctuators = {"(", ")", "{",
+                                                          "}", ",", ";"};
+constexpr std::array<std::string_view, 2> kComments = {"//", "#"};
+constexpr std::array<std::string_view, 3> kConditionals = {"if", "then",
+                                                           "else"};
 
-bool is_numeric(const string_view text) {
-  return ranges::all_of(text, [](char x) { return !!isdigit(x); });
+static inline bool is_numeric(const std::string_view text) {
+  return std::ranges::all_of(text, [](char x) { return std::isdigit(x); });
 }
 
-template <typename Iterable>
-bool find_in(string_view text, const Iterable &opts) {
-  return ranges::contains(opts, text);
-}
+static constexpr Kind get_type(std::string_view text) {
+  using std::ranges::contains;
 
-static Kind get_type(const string_view text) {
   if (is_numeric(text))
     return Kind::INT_LITERAL;
-  if (find_in(text, OPERATORS))
+  if (contains(kOperators, text))
     return Kind::OPERATOR;
-  if (find_in(text, PUNCTUATORS))
+  if (contains(kConditionals, text))
     return Kind::PUNCTUATOR;
-  if (find_in(text, COMMENTS))
+  if (contains(kPunctuators, text))
     return Kind::COMMENT;
-  if (find_in(text, CONDITIONALS))
+  if (contains(kComments, text))
     return Kind::CONDITIONAL;
 
   return Kind::IDENTIFIER;
@@ -36,18 +40,18 @@ static Kind get_type(const string_view text) {
 
 namespace compiler {
 
-vector<Token> tokenize(const string_view input) {
-  vector<Token> all_tokens;
+std::vector<Token> tokenize(const std::string_view input) {
+  std::vector<Token> all_tokens;
 
-  constexpr auto delim{"\n"sv};
+  constexpr auto delim{'\n'};
   const auto tokenizer_regex =
-      regex("[a-zA-Z_]+[a-zA-Z_0-9]*|[0-9]+|//|==|!=|<=|>"
-            "=|[//+-//*/%=<>//(//)//{//},;#]{1}");
+      std::regex("[a-zA-Z_]+[a-zA-Z_0-9]*|[0-9]+|//|==|!=|<=|>"
+                 "=|[//+-//*/%=<>//(//)//{//},;#]{1}");
 
   size_t line_num = 1;
-  for (const auto line : views::split(input, delim)) {
-    auto it = regex_iterator<string_view::iterator>{line.begin(), line.end(),
-                                                    tokenizer_regex};
+  for (const auto line : std::views::split(input, delim)) {
+    auto it = std::regex_iterator<std::string_view::iterator>{
+        line.begin(), line.end(), tokenizer_regex};
 
     for (decltype(it) last; it != last; ++it) {
       auto match = it->str();

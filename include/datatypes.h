@@ -1,15 +1,14 @@
 #pragma once
 
-#include <array>
 #include <cstddef>
 #include <datatypes.h>
 #include <iostream>
 #include <ostream>
 #include <sstream>
 #include <string>
-#include <string_view>
+#include <unordered_map>
+#include <variant>
 
-// === Tokenizer types ===
 enum class Kind {
   IDENTIFIER,
   INT_LITERAL,
@@ -20,14 +19,7 @@ enum class Kind {
   END,
 };
 
-static constexpr std::array<std::string_view, 15> OPERATORS = {
-    "+",  "-", "*", "/", "=",   "==", "!=", "<=",
-    ">=", "<", ">", "%", "and", "or", "not"};
-static constexpr std::array<std::string_view, 6> PUNCTUATORS = {"(", ")", "{",
-                                                                "}", ",", ";"};
-static constexpr std::array<std::string_view, 2> COMMENTS = {"//", "#"};
-static constexpr std::array<std::string_view, 3> CONDITIONALS = {"if", "then",
-                                                                 "else"};
+enum class C_type { C_int, C_bool, C_unit, C_any };
 
 struct Loc {
   size_t row;
@@ -56,3 +48,7 @@ struct Token {
     return oss.str();
   }
 };
+
+using FnType = std::vector<C_type>;
+using SymEntry = std::variant<C_type, FnType>;
+using Scope = std::unordered_map<std::string, SymEntry>;

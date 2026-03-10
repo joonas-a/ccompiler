@@ -2,43 +2,14 @@
 #include <stdexcept>
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 #include <variant>
 
 #include "expression.h"
-#include "typecheck.h"
+#include "symtab.h"
 
 using namespace std;
 
 namespace compiler {
-
-struct SymTab {
-  vector<Scope> stack{};
-
-  void add_scope() { stack.emplace_back(); }
-  void remove_scope() { stack.pop_back(); }
-
-  void add(string name, C_type symbol) {
-    println("Adding {} with enum val {}", name, static_cast<int>(symbol));
-    stack.back().emplace(std::move(name), symbol);
-  }
-  void initialize(Scope &&globals) {
-    stack.clear();
-    stack.emplace_back(std::move(globals));
-  }
-
-  const SymEntry *lookup(const string &key) const {
-    for (auto it = stack.rbegin(); it != stack.rend(); ++it)
-      if (auto search = it->find(key); search != it->end())
-        return &search->second;
-
-    return nullptr;
-  }
-
-  const bool local_key_exists(const string &key) const {
-    return stack.back().contains(key);
-  }
-};
 
 struct TypeChecker {
   SymTab &symTab;
@@ -232,7 +203,6 @@ C_type TypeChecker::visit(const FunctionCall &e) {
 
 auto typecheck(UPtrExpr &root) -> C_type {
   SymTab SymbolTable{};
-  SymbolTable.initialize(initialize_globals());
 
   TypeChecker tc{SymbolTable};
 

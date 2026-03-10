@@ -5,7 +5,6 @@
 
 #include "datatypes.h"
 #include "expression.h"
-#include "typecheck.h"
 
 namespace compiler {
 
