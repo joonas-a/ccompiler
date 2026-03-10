@@ -102,6 +102,6 @@ const SymEntry *SymTab::lookup(const std::string &key) const {
   return nullptr;
 }
 
-const bool SymTab::local_key_exists(const std::string &key) const {
+bool SymTab::local_key_exists(const std::string &key) const {
   return stack.back().contains(key);
 }

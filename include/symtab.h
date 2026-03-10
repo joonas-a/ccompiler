@@ -18,5 +18,5 @@ struct SymTab {
 
   const SymEntry *lookup(const std::string &key) const;
 
-  const bool local_key_exists(const std::string &key) const;
+  bool local_key_exists(const std::string &key) const;
 };

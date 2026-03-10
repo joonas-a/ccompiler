@@ -6,28 +6,15 @@
 
 #include "expression.h"
 #include "symtab.h"
+#include "typecheck.h"
 
 using namespace std;
 
 namespace compiler {
 
-struct TypeChecker {
-  SymTab &symTab;
+TypeChecker::TypeChecker(SymTab &st) : symTab(st) {}
 
-  explicit TypeChecker(SymTab &st) : symTab(st) {};
-
-  C_type visit(const Literal &e);
-  C_type visit(const Identifier &e);
-  C_type visit(const UnaryOp &e);
-  C_type visit(const BinaryOp &e);
-  C_type visit(const FunctionCall &e);
-  C_type visit(const IfThenStatement &e);
-  C_type visit(const IfThenElseStatement &e);
-  C_type visit(const Block &e);
-  C_type visit(const Variable &e);
-  C_type visit(const While &e);
-};
-
+// TODO: Move expr methods elsewhere
 C_type Literal::accept(TypeChecker &tc) const { return tc.visit(*this); }
 C_type Identifier::accept(TypeChecker &tc) const { return tc.visit(*this); }
 C_type UnaryOp::accept(TypeChecker &tc) const { return tc.visit(*this); }
