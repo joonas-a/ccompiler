@@ -7,11 +7,11 @@
 #include <vector>
 
 #include "datatypes.h"
+#include "ir.h"
 
 namespace compiler {
 
 struct TypeChecker;
-struct IRGenerator;
 
 // TODO: Move logic out of header
 
@@ -21,7 +21,7 @@ struct Expression {
   virtual void print(std::ostream &os) const = 0;
 
   virtual C_type accept(TypeChecker &tc) const = 0;
-  virtual void accept(IRGenerator &tc) const = 0;
+  virtual IRVar accept(IRGenerator &tc) const = 0;
 };
 
 using UPtrExpr = std::unique_ptr<Expression>;
@@ -34,7 +34,7 @@ struct Literal : Expression {
   explicit Literal(std::monostate u) : value(u) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Literal *>(&other)) {
@@ -64,7 +64,7 @@ struct Identifier : Expression {
   explicit Identifier(std::string x) : value(std::move(x)) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Identifier *>(&other)) {
@@ -84,7 +84,7 @@ struct FunctionCall : Expression {
       : name(std::move(x)), args(std::move(a)) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const FunctionCall *>(&other)) {
@@ -118,7 +118,7 @@ struct UnaryOp : Expression {
   explicit UnaryOp(std::string o, UPtrExpr e) : op(o), expr(std::move(e)) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const UnaryOp *>(&other)) {
@@ -143,7 +143,7 @@ struct BinaryOp : Expression {
       : lhs(std::move(l)), op(o), rhs(std::move(r)) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const BinaryOp *>(&other)) {
@@ -169,7 +169,7 @@ struct IfThenStatement : Expression {
       : condition(std::move(c)), then_branch(std::move(t)) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const IfThenStatement *>(&other)) {
@@ -196,7 +196,7 @@ struct IfThenElseStatement : Expression {
         else_branch(std::move(e)) {}
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const IfThenElseStatement *>(&other)) {
@@ -222,7 +222,7 @@ struct Block : Expression {
   explicit Block(std::vector<UPtrExpr> e) : exprs(std::move(e)) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Block *>(&other)) {
@@ -255,7 +255,7 @@ struct Variable : Expression {
       : name(std::move(n)), value(std::move(v)) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const Variable *>(&other)) {
@@ -279,7 +279,7 @@ struct While : Expression {
       : cond(std::move(c)), body(std::move(b)) {};
 
   C_type accept(TypeChecker &tc) const override;
-  void accept(IRGenerator &ir) const override;
+  IRVar accept(IRGenerator &ir) const override;
 
   bool equals(const Expression &other) const override {
     if (auto *o = dynamic_cast<const While *>(&other)) {

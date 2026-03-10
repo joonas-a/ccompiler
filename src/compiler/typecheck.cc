@@ -4,6 +4,7 @@
 #include <type_traits>
 #include <variant>
 
+#include "datatypes.h"
 #include "expression.h"
 #include "symtab.h"
 #include "typecheck.h"
@@ -190,7 +191,7 @@ C_type TypeChecker::visit(const FunctionCall &e) {
   return expected.back();
 }
 
-auto typecheck(UPtrExpr &root) -> C_type {
+C_type typecheck(UPtrExpr &root) {
   SymTab SymbolTable{};
 
   TypeChecker tc{SymbolTable};
