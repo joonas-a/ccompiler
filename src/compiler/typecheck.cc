@@ -15,6 +15,7 @@ namespace compiler {
 TypeChecker::TypeChecker(SymTab &st) : symTab(st) {}
 
 // TODO: Move expr methods elsewhere
+// ======>
 C_type Literal::accept(TypeChecker &tc) const { return tc.visit(*this); }
 C_type Identifier::accept(TypeChecker &tc) const { return tc.visit(*this); }
 C_type UnaryOp::accept(TypeChecker &tc) const { return tc.visit(*this); }
@@ -29,6 +30,7 @@ C_type IfThenElseStatement::accept(TypeChecker &tc) const {
 C_type Block::accept(TypeChecker &tc) const { return tc.visit(*this); }
 C_type Variable::accept(TypeChecker &tc) const { return tc.visit(*this); }
 C_type While::accept(TypeChecker &tc) const { return tc.visit(*this); }
+// <======
 
 C_type TypeChecker::visit(const Literal &e) {
   return std::visit(
