@@ -1,7 +1,9 @@
 #pragma once
 
 #include <string>
+#include <tuple>
 #include <unordered_map>
+#include <unordered_set>
 #include <variant>
 #include <vector>
 
@@ -9,6 +11,7 @@ namespace compiler {
 
 using IRVar = std::string;
 using Label = std::string;
+using Labels = std::tuple<Label, Label, Label>;
 
 struct Literal;
 struct Identifier;
@@ -22,11 +25,12 @@ struct Variable;
 struct While;
 
 struct IRUtils {
-  unsigned long long var_count{};
-  unsigned long long label_count{};
+  size_t var_count{};
+  size_t label_count{};
 
+  std::unordered_set<IRVar> ir_vars{};
   IRVar generate_var();
-  std::tuple<Label, Label, Label> generate_labels(bool is_while);
+  Labels generate_labels(bool is_while);
 };
 
 // IRGen instructions

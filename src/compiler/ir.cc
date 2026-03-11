@@ -1,10 +1,17 @@
 #include <tuple>
 #include <type_traits>
+#include <unordered_set>
 
 #include "expression.h"
 #include "ir.h"
 
 struct SymTab;
+
+// TODOS:
+// Symbol table incl. all functions etc
+// Scopes
+// Printing
+// keywords and, or, ...
 
 namespace compiler {
 
@@ -163,10 +170,14 @@ IRVar IRGenerator::visit(const FunctionCall &e) {
 
 IRVar IRUtils::generate_var() {
   ++var_count;
-  return std::format("x{}", var_count);
+
+  const auto new_var = std::format("x{}", var_count);
+  this->ir_vars.emplace(new_var);
+
+  return new_var;
 }
 
-std::tuple<Label, Label, Label> IRUtils::generate_labels(bool is_while) {
+Labels IRUtils::generate_labels(bool is_while) {
   ++label_count;
   return is_while ? std::make_tuple(std::format("while_start{}", label_count),
                                     std::format("while_body{}", label_count),
@@ -179,12 +190,12 @@ std::tuple<Label, Label, Label> IRUtils::generate_labels(bool is_while) {
 
 auto generate_ir(UPtrExpr &root) {
   std::unordered_map<IRVar, IRVar> symbol_table{};
-  IRUtils utils{};
 
+  IRUtils utils{};
   IRGenerator ir_gen{utils};
 
   root->accept(ir_gen);
 
-  return ir_gen.ins;
+  return ir_gen;
 }
 } // namespace compiler
