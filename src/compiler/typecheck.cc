@@ -13,7 +13,7 @@ using namespace std;
 
 namespace compiler {
 
-TypeChecker::TypeChecker(SymTab &st) : symTab(st) {}
+TypeChecker::TypeChecker(SymTab &st) : sym_tab(st) {}
 
 // TODO: Move expr methods elsewhere
 // ======>
@@ -53,7 +53,7 @@ C_type TypeChecker::visit(const BinaryOp &e) {
   const auto lhs_t = e.lhs->accept(*this);
   const auto rhs_t = e.rhs->accept(*this);
 
-  const auto typing = get_if<FnType>(this->symTab.lookup(e.op));
+  const auto typing = get_if<FnType>(this->sym_tab.lookup(e.op));
 
   if (typing) {
     if (lhs_t == typing->at(0) && rhs_t == typing->at(1))
@@ -74,7 +74,7 @@ C_type TypeChecker::visit(const BinaryOp &e) {
 C_type TypeChecker::visit(const UnaryOp &e) {
   const auto ct = e.expr->accept(*this);
 
-  const auto typing = get_if<FnType>(this->symTab.lookup(e.op));
+  const auto typing = get_if<FnType>(this->sym_tab.lookup(e.op));
 
   if (typing) {
     if (ct == typing->at(0))
@@ -107,7 +107,7 @@ C_type TypeChecker::visit(const IfThenElseStatement &e) {
 }
 
 C_type TypeChecker::visit(const Block &e) {
-  this->symTab.add_scope();
+  this->sym_tab.add_scope();
 
   if (e.exprs.empty())
     return C_type::C_unit;
@@ -117,7 +117,7 @@ C_type TypeChecker::visit(const Block &e) {
 
   auto block_t = e.exprs.back()->accept(*this);
 
-  this->symTab.remove_scope();
+  this->sym_tab.remove_scope();
   return block_t;
 }
 
@@ -135,14 +135,14 @@ C_type TypeChecker::visit(const While &e) {
 C_type TypeChecker::visit(const Variable &e) {
   auto name = e.name;
 
-  if (this->symTab.local_key_exists(name))
+  if (this->sym_tab.local_key_exists(name))
     throw runtime_error("Attempted to re-declare a local variable");
 
   auto tmp = e.value->accept(*this);
 
-  this->symTab.add(name, e.value->accept(*this));
+  this->sym_tab.add(name, e.value->accept(*this));
 
-  for (auto x : this->symTab.stack.back()) {
+  for (auto x : this->sym_tab.stack.back()) {
     auto tmp = get_if<C_type>(&x.second);
     if (tmp) {
       cout << x.first << static_cast<int>(*tmp) << "\n";
@@ -155,7 +155,7 @@ C_type TypeChecker::visit(const Variable &e) {
 }
 
 C_type TypeChecker::visit(const Identifier &e) {
-  auto symEntry = this->symTab.lookup(e.value);
+  auto symEntry = this->sym_tab.lookup(e.value);
 
   if (!symEntry)
     throw runtime_error("Variable not declared or unidentified identifier");
@@ -170,7 +170,7 @@ C_type TypeChecker::visit(const Identifier &e) {
 }
 
 C_type TypeChecker::visit(const FunctionCall &e) {
-  auto symEntry = this->symTab.lookup(e.name->value);
+  auto symEntry = this->sym_tab.lookup(e.name->value);
 
   if (!symEntry)
     throw runtime_error("Function with given name was not found");

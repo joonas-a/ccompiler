@@ -17,7 +17,7 @@ struct Variable;
 struct While;
 
 struct TypeChecker {
-  SymTab &symTab;
+  SymTab &sym_tab;
 
   explicit TypeChecker(SymTab &st);
 

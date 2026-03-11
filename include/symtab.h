@@ -5,8 +5,6 @@
 
 #include "datatypes.h"
 
-Scope initialize_globals();
-
 struct SymTab {
   std::vector<Scope> stack;
 

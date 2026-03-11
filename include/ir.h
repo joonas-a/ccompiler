@@ -1,9 +1,9 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
+#include <variant>
 #include <vector>
-
-#include "symtab.h"
 
 namespace compiler {
 
@@ -21,10 +21,12 @@ struct Block;
 struct Variable;
 struct While;
 
-struct VarGenerator {
-  unsigned long long counter{};
+struct IRUtils {
+  unsigned long long var_count{};
+  unsigned long long label_count{};
 
   IRVar generate_var();
+  std::tuple<Label, Label, Label> generate_labels(bool is_while);
 };
 
 // IRGen instructions
@@ -59,16 +61,15 @@ struct CondJump {
   Label else_label;
 };
 
-using Instruction =
-    std::variant<LoadBoolConst, LoadIntConst, Copy, Call, Jump, CondJump>;
-
+using Instruction = std::variant<LoadBoolConst, LoadIntConst, Copy, Call, Jump,
+                                 CondJump, Label>;
 
 struct IRGenerator {
-  SymTab &symTab;
-  VarGenerator &varGen;
+  IRUtils &utils;
+  std::unordered_map<std::string, IRVar> sym_tab{};
   std::vector<Instruction> ins{};
 
-  explicit IRGenerator(SymTab &st, VarGenerator& vg);
+  explicit IRGenerator(IRUtils &utils);
 
   IRVar visit(const Literal &e);
   IRVar visit(const Identifier &e);

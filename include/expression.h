@@ -21,7 +21,7 @@ struct Expression {
   virtual void print(std::ostream &os) const = 0;
 
   virtual C_type accept(TypeChecker &tc) const = 0;
-  virtual IRVar accept(IRGenerator &tc) const = 0;
+  virtual IRVar accept(IRGenerator &ir) const = 0;
 };
 
 using UPtrExpr = std::unique_ptr<Expression>;
