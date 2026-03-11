@@ -10,8 +10,6 @@
 namespace compiler {
 
 using IRVar = std::string;
-using Label = std::string;
-using Labels = std::tuple<Label, Label, Label>;
 
 struct Literal;
 struct Identifier;
@@ -24,16 +22,12 @@ struct Block;
 struct Variable;
 struct While;
 
-struct IRUtils {
-  size_t var_count{};
-  size_t label_count{};
-
-  std::unordered_set<IRVar> ir_vars{};
-  IRVar generate_var();
-  Labels generate_labels(bool is_while);
+// IRGen instructions
+struct Label {
+  std::string text{};
+  Label(std::string t) : text(std::move(t)) {};
 };
 
-// IRGen instructions
 struct LoadBoolConst {
   bool value;
   IRVar dest;
@@ -67,6 +61,16 @@ struct CondJump {
 
 using Instruction = std::variant<LoadBoolConst, LoadIntConst, Copy, Call, Jump,
                                  CondJump, Label>;
+using Labels = std::tuple<Label, Label, Label>;
+
+struct IRUtils {
+  size_t var_count{};
+  size_t label_count{};
+
+  std::unordered_set<IRVar> ir_vars{};
+  IRVar generate_var();
+  Labels generate_labels(bool is_while);
+};
 
 struct IRGenerator {
   IRUtils &utils;

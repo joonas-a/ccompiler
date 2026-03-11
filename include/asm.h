@@ -17,4 +17,16 @@ struct Locals {
   void init_stack(IRVarSet ir_vars);
 };
 
+struct AssemblyGenerator {
+  Locals &locals;
+  std::vector<std::string> lines{};
+
+  explicit AssemblyGenerator(Locals &locals) : locals(locals) {};
+
+  void emit(std::string line) { lines.push_back(line); }
+
+  void insert_boiler();
+  void generate(std::vector<Instruction> &instructions);
+};
+
 } // namespace compiler
