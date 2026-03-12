@@ -37,9 +37,11 @@ void AssemblyGenerator::start_boiler() {
   this->emit(".extern print_bool");
   this->emit(".extern read_int");
   this->emit(".global main");
-  this->emit(".type main, @function\n");
+  this->emit(".type main, @function");
 
-  this->emit(".section .text\n");
+  this->emit("");
+  this->emit(".section .text");
+  this->emit("");
 
   this->emit("main:");
   this->emit("pushq %rbp");
@@ -52,12 +54,13 @@ void AssemblyGenerator::end_boiler() {
   this->emit("movq $0, %rax");
   this->emit("movq %rbp, %rsp");
   this->emit("popq %rbp");
-  this->emit("ret\n");
+  this->emit("ret");
+  this->emit("");
 
-  this->emit("scan_format:");
-  this->emit(".asciz \"%ld\"");
-  this->emit("print_format:");
-  this->emit(".asciz \"%ld\"\\n");
+  // this->emit("scan_format:");
+  // this->emit(".asciz \"%ld\"");
+  // this->emit("print_format:");
+  // this->emit(".asciz \"%ld\"\n");
 }
 
 void AssemblyGenerator::print() {
