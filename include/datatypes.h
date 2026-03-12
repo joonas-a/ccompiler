@@ -7,6 +7,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 #include <variant>
 
 enum class Kind {
@@ -27,7 +28,7 @@ struct Loc {
 
   bool operator==(const Loc &other) const {
     return (row == other.row && col == other.col) ||
-           (other.row == SIZE_T_MAX && other.col == SIZE_T_MAX);
+           (other.row == SIZE_MAX && other.col == SIZE_MAX);
   }
 
   friend std::ostream &operator<<(std::ostream &out, const Loc &loc) {

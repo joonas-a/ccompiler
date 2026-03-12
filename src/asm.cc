@@ -36,17 +36,17 @@ void AssemblyGenerator::start_boiler() {
   this->emit(".extern print_int");
   this->emit(".extern print_bool");
   this->emit(".extern read_int");
-  this->emit(".global main");
-  this->emit(".type main, @function");
-
   this->emit("");
   this->emit(".section .text");
   this->emit("");
-
+  this->emit(".global main");
+  this->emit(".type main, @function");
+  this->emit("");
   this->emit("main:");
+  this->emit("");
   this->emit("pushq %rbp");
   this->emit("movq %rsp, %rbp");
-  this->emit(format("subq %{}, %rsp", this->locals.stack_used * 8));
+  this->emit(format("subq ${}, %rsp", this->locals.stack_used * 8));
 }
 
 void AssemblyGenerator::end_boiler() {

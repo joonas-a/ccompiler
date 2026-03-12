@@ -14,7 +14,7 @@
 using namespace compiler;
 using std::make_unique, std::vector, std::string_view;
 
-const Loc L{SIZE_T_MAX, SIZE_T_MAX};
+const Loc L{SIZE_MAX, SIZE_MAX};
 
 auto parse(string_view input) {
   return compiler::parse(compiler::tokenize(input));

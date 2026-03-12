@@ -11,7 +11,7 @@
 
 using namespace std;
 
-const Loc L{SIZE_T_MAX, SIZE_T_MAX};
+const Loc L{SIZE_MAX, SIZE_MAX};
 
 TEST_CASE("Tokenizer tests", "[tokenizer]") {
   string input1 = "if 3\nwhile \n \n else";

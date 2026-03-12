@@ -43,7 +43,7 @@ namespace compiler {
 std::vector<Token> tokenize(const std::string_view input) {
   std::vector<Token> all_tokens;
 
-  constexpr auto delim{std::string{"\n"}};
+  constexpr auto delim{std::string_view{"\n"}};
   const auto tokenizer_regex =
       std::regex("[a-zA-Z_]+[a-zA-Z_0-9]*|[0-9]+|//|==|!=|<=|>"
                  "=|[//+-//*/%=<>//(//)//{//},;#]{1}");
