@@ -24,9 +24,9 @@ std::string Locals::get_addr_for(IRVar var) {
   if (auto it = this->ir_var_map.find(var); it != this->ir_var_map.end()) {
     return it->second;
   }
-  for (auto var : this->ir_var_map)
+  // for (auto var : this->ir_var_map)
 
-    std::cout << this->stack_used << "stack used" << std::endl;
+  // std::cout << this->stack_used << "stack used" << std::endl;
   // std::cout << this-><< "stack used" << std::endl;
 
   throw std::runtime_error("Variable not allocated");
@@ -116,70 +116,70 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
             emit("# Call");
 
             if (in.fn == "+") {
-              emit(format("movq {}, %rax", in.args[0]));
-              emit(format("addq {}, %rax", in.args[1]));
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
+              emit(format("addq {}, %rax", locals.get_addr_for(in.args[1])));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == "-") {
-              emit(format("movq {}, %rax", in.args[0]));
-              emit(format("subq {}, %rax", in.args[1]));
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
+              emit(format("subq {}, %rax", locals.get_addr_for(in.args[1])));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == "*") {
-              emit(format("movq {}, %rax", in.args[0]));
-              emit(format("imulq {}, %rax", in.args[1]));
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
+              emit(format("imulq {}, %rax", locals.get_addr_for(in.args[1])));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == "/") {
-              emit(format("movq {}, %rax", in.args[0]));
+              emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
               emit("cqto");
-              emit(format("idivq {}", in.args[1]));
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("idivq {}", locals.get_addr_for(in.args[1])));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == "%") {
-              emit(format("movq {}, %rax", in.args[0]));
+              emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
               emit("cqto");
-              emit(format("idivq {}", in.args[1]));
-              emit(format("movq %rdx, %rax", in.dst));
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("idivq {}", locals.get_addr_for(in.args[1])));
+              emit(format("movq %rdx, %rax", locals.get_addr_for(in.dst)));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == "==") {
               emit("xor %rax, %rax");
-              emit(format("movq {}, %rdx", in.args[0]));
-              emit(format("cmpq {}, %rdx", in.args[1]));
+              emit(format("movq {}, %rdx", locals.get_addr_for(in.args[0])));
+              emit(format("cmpq {}, %rdx", locals.get_addr_for(in.args[1])));
               emit("sete %al");
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == "!=") {
               emit("xor %rax, %rax");
-              emit(format("movq {}, %rdx", in.args[0]));
-              emit(format("cmpq {}, %rdx", in.args[1]));
+              emit(format("movq {}, %rdx", locals.get_addr_for(in.args[0])));
+              emit(format("cmpq {}, %rdx", locals.get_addr_for(in.args[1])));
               emit("setne %al");
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == "<") {
               emit("xor %rax, %rax");
-              emit(format("movq {}, %rdx", in.args[0]));
-              emit(format("cmpq {}, %rdx", in.args[1]));
+              emit(format("movq {}, %rdx", locals.get_addr_for(in.args[0])));
+              emit(format("cmpq {}, %rdx", locals.get_addr_for(in.args[1])));
               emit("setl %al");
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == "<=") {
               emit("xor %rax, %rax");
-              emit(format("movq {}, %rdx", in.args[0]));
-              emit(format("cmpq {}, %rdx", in.args[1]));
+              emit(format("movq {}, %rdx", locals.get_addr_for(in.args[0])));
+              emit(format("cmpq {}, %rdx", locals.get_addr_for(in.args[1])));
               emit("setle %al");
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == ">") {
               emit("xor %rax, %rax");
-              emit(format("movq {}, %rdx", in.args[0]));
-              emit(format("cmpq {}, %rdx", in.args[1]));
+              emit(format("movq {}, %rdx", locals.get_addr_for(in.args[0])));
+              emit(format("cmpq {}, %rdx", locals.get_addr_for(in.args[1])));
               emit("setg %al");
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             } else if (in.fn == ">=") {
               emit("xor %rax, %rax");
-              emit(format("movq {}, %rdx", in.args[0]));
-              emit(format("cmpq {}, %rdx", in.args[1]));
+              emit(format("movq {}, %rdx", locals.get_addr_for(in.args[0])));
+              emit(format("cmpq {}, %rdx", locals.get_addr_for(in.args[1])));
               emit("setge %al");
-              emit(format("movq %rax, {}", in.dst));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             }
             emit("");
           }
         },
         instruction);
-  }
+  };
 }
 
 auto generate_assembly(IRGenerator &&ir_gen) {
