@@ -14,7 +14,8 @@ struct Locals {
   size_t stack_used{};
   std::unordered_map<IRVar, std::string> ir_var_map{};
 
-  void init_stack(IRVarSet ir_vars);
+  void init_stack(IRVarSet &ir_vars);
+  std::string get_addr_for(IRVar var);
 };
 
 struct AssemblyGenerator {
@@ -27,6 +28,7 @@ struct AssemblyGenerator {
 
   void insert_boiler();
   void generate(std::vector<Instruction> &instructions);
+  void print();
 };
 
 } // namespace compiler

@@ -191,7 +191,7 @@ C_type TypeChecker::visit(const FunctionCall &e) {
   return expected.back();
 }
 
-C_type typecheck(UPtrExpr &root) {
+C_type typecheck(UPtrExpr &&root) {
   SymTab SymbolTable{};
 
   TypeChecker tc{SymbolTable};

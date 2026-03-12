@@ -15,8 +15,6 @@ struct SymTab;
 
 namespace compiler {
 
-IRGenerator::IRGenerator(IRUtils &utils) : utils(utils) {};
-
 // TODO: Move expr methods elsewhere
 IRVar Literal::accept(IRGenerator &tc) const { return tc.visit(*this); }
 IRVar Identifier::accept(IRGenerator &tc) const { return tc.visit(*this); }
@@ -172,7 +170,10 @@ IRVar IRUtils::generate_var() {
   ++var_count;
 
   const auto new_var = std::format("x{}", var_count);
+  println("Adding a new var {}", new_var);
   this->ir_vars.emplace(new_var);
+
+  std::cout << "map size: " << this->ir_vars.size() << std::endl;
 
   return new_var;
 }
@@ -188,13 +189,16 @@ Labels IRUtils::generate_labels(bool is_while) {
                                     std::format("else_end{}", label_count));
 }
 
+size_t IRUtils::size_of() { return this->ir_vars.size(); }
+
 auto generate_ir(UPtrExpr &root) {
   std::unordered_map<IRVar, IRVar> symbol_table{};
 
-  IRUtils utils{};
-  IRGenerator ir_gen{utils};
+  IRGenerator ir_gen{};
 
   root->accept(ir_gen);
+
+  std::println("Irutils ir_vars size {}", ir_gen.utils.size_of());
 
   return ir_gen;
 }

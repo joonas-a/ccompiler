@@ -12,7 +12,7 @@ using std::string_view;
 
 auto check(string_view input) {
   auto expr = compiler::parse(compiler::tokenize(input));
-  return compiler::typecheck(expr);
+  return compiler::typecheck(std::move(expr));
 }
 
 TEST_CASE("Typechecker", "[typechecker]") {

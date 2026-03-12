@@ -323,9 +323,10 @@ TEST_CASE("More edge cases", "[parser-edgecase]") {
     REQUIRE_NOTHROW(parse("{ if true then { a }; b }"));
     REQUIRE_NOTHROW(parse("if true then { a } b; c"));
     // REQUIRE_NOTHROW(
-    //     helper("{ if true then { a }; b; c }"));
+    //     parse("{ if true then { a }; b; c }"));
     // REQUIRE_NOTHROW(compiler::parse(
     //     compiler::tokenize("{ if true then { a } else { b } c }")));
+    // REQUIRE_NOTHROW(parse("{ if true then { a } b; c }")); // TODO: fix test
     REQUIRE_NOTHROW(parse("x = { { f(a) } { b } }"));
 
     SECTION("Should equal") {

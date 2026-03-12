@@ -30,12 +30,12 @@ struct Label {
 
 struct LoadBoolConst {
   bool value;
-  IRVar dest;
+  IRVar dst;
 };
 
 struct LoadIntConst {
   int value;
-  IRVar dest;
+  IRVar dst;
 };
 
 struct Copy {
@@ -70,14 +70,13 @@ struct IRUtils {
   std::unordered_set<IRVar> ir_vars{};
   IRVar generate_var();
   Labels generate_labels(bool is_while);
+  size_t size_of();
 };
 
 struct IRGenerator {
-  IRUtils &utils;
+  IRUtils utils{};
   std::unordered_map<std::string, IRVar> sym_tab{};
   std::vector<Instruction> ins{};
-
-  explicit IRGenerator(IRUtils &utils);
 
   IRVar visit(const Literal &e);
   IRVar visit(const Identifier &e);
