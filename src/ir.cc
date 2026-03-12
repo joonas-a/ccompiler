@@ -170,10 +170,7 @@ IRVar IRUtils::generate_var() {
   ++var_count;
 
   const auto new_var = std::format("x{}", var_count);
-  println("Adding a new var {}", new_var);
   this->ir_vars.emplace(new_var);
-
-  std::cout << "map size: " << this->ir_vars.size() << std::endl;
 
   return new_var;
 }
@@ -198,7 +195,7 @@ auto generate_ir(UPtrExpr &root) {
 
   root->accept(ir_gen);
 
-  std::println("Irutils ir_vars size {}", ir_gen.utils.size_of());
+  // std::println("Irutils ir_vars size {}", ir_gen.utils.size_of());
 
   return ir_gen;
 }

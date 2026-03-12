@@ -200,7 +200,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
     consume("{");
 
     if (peek(-1).text == "{" && peek().text == "}") {
-      println("Block was empty!");
+      // println("Block was empty!");
       return make_unique<Block>(vector<UPtrExpr>());
     }
 

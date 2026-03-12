@@ -26,7 +26,8 @@ struct AssemblyGenerator {
 
   void emit(std::string line) { lines.push_back(line); }
 
-  void insert_boiler();
+  void start_boiler();
+  void end_boiler();
   void generate(std::vector<Instruction> &instructions);
   void print();
 };

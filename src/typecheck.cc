@@ -145,11 +145,11 @@ C_type TypeChecker::visit(const Variable &e) {
   for (auto x : this->sym_tab.stack.back()) {
     auto tmp = get_if<C_type>(&x.second);
     if (tmp) {
-      cout << x.first << static_cast<int>(*tmp) << "\n";
+      // cout << x.first << static_cast<int>(*tmp) << "\n";
     }
   }
 
-  println("Assigned var, returning now");
+  // println("Assigned var, returning now");
 
   return C_type::C_unit;
 }
@@ -162,7 +162,7 @@ C_type TypeChecker::visit(const Identifier &e) {
 
   if (symEntry->index() == 0) {
     auto tmp = get<C_type>(*symEntry);
-    println("Fetched and will now return {}", static_cast<int>(tmp));
+    // println("Fetched and will now return {}", static_cast<int>(tmp));
     return tmp;
   }
 

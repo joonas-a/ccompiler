@@ -14,8 +14,6 @@ namespace compiler {
 using std::format;
 
 void Locals::init_stack(IRVarSet &ir_vars) {
-  std::println("Init stack NOW");
-  std::println("Size: {}", ir_vars.size());
   for (const auto var : ir_vars) {
     ++this->stack_used;
     this->ir_var_map.emplace(var, format("-{}(%rbp)", 8 * this->stack_used));
@@ -27,31 +25,39 @@ std::string Locals::get_addr_for(IRVar var) {
     return it->second;
   }
   for (auto var : this->ir_var_map)
-    std::cout << var.first << std::endl;
 
-  std::cout << this->stack_used << "stack used" << std::endl;
+    std::cout << this->stack_used << "stack used" << std::endl;
   // std::cout << this-><< "stack used" << std::endl;
 
   throw std::runtime_error("Variable not allocated");
 }
 
-void AssemblyGenerator::insert_boiler() {
+void AssemblyGenerator::start_boiler() {
   this->emit(".extern print_int");
   this->emit(".extern print_bool");
   this->emit(".extern read_int");
   this->emit(".global main");
-  this->emit(".type main, @function");
+  this->emit(".type main, @function\n");
 
-  this->emit("");
-
-  this->emit(".section .text");
-
-  this->emit("");
+  this->emit(".section .text\n");
 
   this->emit("main:");
   this->emit("pushq %rbp");
   this->emit("movq %rsp, %rbp");
   this->emit(format("subq %{}, %rsp", this->locals.stack_used * 8));
+}
+
+void AssemblyGenerator::end_boiler() {
+  this->emit(".Lend");
+  this->emit("movq $0, %rax");
+  this->emit("movq %rbp, %rsp");
+  this->emit("popq %rbp");
+  this->emit("ret\n");
+
+  this->emit("scan_format:");
+  this->emit(".asciz \"%ld\"");
+  this->emit("print_format:");
+  this->emit(".asciz \"%ld\"\\n");
 }
 
 void AssemblyGenerator::print() {
@@ -174,16 +180,17 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
 }
 
 auto generate_assembly(IRGenerator &&ir_gen) {
-  std::println("Call to gen assembly");
-  std::println("irgen? {}", ir_gen.ins.size());
-
   Locals locals{};
   locals.init_stack(ir_gen.utils.ir_vars);
 
   AssemblyGenerator asm_gen{locals};
 
-  asm_gen.insert_boiler();
+  asm_gen.start_boiler();
+
   asm_gen.generate(ir_gen.ins);
+
+  asm_gen.end_boiler();
+
   asm_gen.print();
 
   return asm_gen.lines;

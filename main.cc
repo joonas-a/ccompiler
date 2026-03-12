@@ -1,13 +1,22 @@
 #include <iostream>
+#include <iterator>
+#include <string>
+
+#include "compiler.h"
+
+static auto generate_assembly(std::string_view input) {
+  auto ast = compiler::parse(compiler::tokenize(input));
+  typecheck(std::move(ast));
+  generate_assembly(generate_ir(ast));
+}
 
 int main(int argc, char *argv[]) {
 
-  std::cout << argc << " " << argv << std::endl;
+  std::string input((std::istreambuf_iterator<char>(std::cin)),
+                    std::istreambuf_iterator<char>());
 
-  int i = 1;
+  // NB: Assembly generator outputs to stdout on its own
+  generate_assembly(input);
 
-  for (; i < argc; i++) {
-    std::cout << argv[i] << std::endl;
-  }
   return 0;
 }

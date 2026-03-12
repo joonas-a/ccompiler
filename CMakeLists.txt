@@ -7,12 +7,10 @@ project(ccompiler LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(nlohmann_json 3.12.0 REQUIRED)
 find_package(Catch2 3 REQUIRED)
 
 # Core lib
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.cc)
-list(APPEND SOURCES third_party/cpp-base64/base64.cpp)
 add_library(core STATIC ${SOURCES})
 target_include_directories(core
   PUBLIC
@@ -20,7 +18,6 @@ target_include_directories(core
   PRIVATE
     third_party/cpp-base64
 )
-target_link_libraries(core PUBLIC nlohmann_json::nlohmann_json)
 
 # Entrypoint
 add_executable(ccompiler main.cc)

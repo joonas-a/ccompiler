@@ -90,7 +90,7 @@ void SymTab::add_scope() { stack.emplace_back(); }
 void SymTab::remove_scope() { stack.pop_back(); }
 
 void SymTab::add(std::string name, C_type symbol) {
-  std::println("Adding {} with enum val {}", name, static_cast<int>(symbol));
+  // std::println("Adding {} with enum val {}", name, static_cast<int>(symbol));
   stack.back().emplace(std::move(name), symbol);
 }
 
