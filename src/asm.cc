@@ -44,9 +44,7 @@ void AssemblyGenerator::start_boiler() {
   this->emit("");
 }
 
-// Maybe useless
 void AssemblyGenerator::end_boiler() {
-  this->emit(".Lend");
   this->emit("movq $0, %rax");
   this->emit("movq %rbp, %rsp");
   this->emit("popq %rbp");
@@ -192,7 +190,7 @@ auto generate_assembly(IRGenerator &&ir_gen) {
 
   asm_gen.generate(ir_gen.ins);
 
-  // asm_gen.end_boiler();
+  asm_gen.end_boiler();
 
   asm_gen.print_asm();
 
