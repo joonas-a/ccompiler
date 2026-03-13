@@ -60,10 +60,13 @@ IRVar IRGenerator::visit(const Literal &e) {
 IRVar IRGenerator::visit(const BinaryOp &e) {
   const auto lhs_t = e.lhs->accept(*this);
 
-  if (e.op == "or") {
-    const auto [rhs_label, skip_label, end_label] = this->utils.generate_labels("or");
+  if (e.op == "or" || e.op == "and") {
+    const auto is_or = e.op == "or";
+    const auto [rhs_label, skip_label, end_label] =
+        this->utils.generate_labels(is_or ? "or" : "and");
 
-    this->ins.emplace_back(CondJump{lhs_t, skip_label, rhs_label});
+    this->ins.emplace_back(CondJump{lhs_t, is_or ? skip_label : rhs_label,
+                                    is_or ? rhs_label : skip_label});
 
     this->ins.emplace_back(rhs_label);
     const auto rhs_t = e.rhs->accept(*this);
