@@ -1,3 +1,4 @@
+#include <print>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -35,6 +36,7 @@ IRVar IRGenerator::visit(const Literal &e) {
   return std::visit(
       [this](const auto &arg) {
         using T = std::decay_t<decltype(arg)>;
+
 
         const auto var = this->utils.generate_var();
         if constexpr (std::is_same_v<T, long>) {
@@ -155,7 +157,8 @@ IRVar IRGenerator::visit(const Identifier &e) {
 }
 
 IRVar IRGenerator::visit(const FunctionCall &e) {
-  const auto fn_name = this->sym_tab.find(e.name->value)->second;
+  // const auto fn_name = this->sym_tab.find(e.name->value)->second;
+  const auto fn_name = e.name->value;
 
   auto args = std::vector<IRVar>{};
   for (auto &arg : e.args)
@@ -186,8 +189,6 @@ Labels IRUtils::generate_labels(bool is_while) {
                                     std::format("if_end{}", label_count),
                                     std::format("else_end{}", label_count));
 }
-
-size_t IRUtils::size_of() { return this->ir_vars.size(); }
 
 IRGenerator generate_ir(UPtrExpr &root, C_type root_type) {
   std::unordered_map<IRVar, IRVar> symbol_table{};

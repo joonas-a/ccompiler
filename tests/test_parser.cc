@@ -192,9 +192,9 @@ TEST_CASE("Parser valid input", "[parser]") {
   SECTION("Function calls") {
     auto args = std::vector<std::unique_ptr<Expression>>{};
 
-    args.emplace_back(std::make_unique<Identifier>("a"));
-    REQUIRE(*parse("f(a)") ==
-            *make_unique<FunctionCall>(make_unique<Identifier>("f"),
+    args.emplace_back(std::make_unique<Literal>(1L));
+    REQUIRE(*parse("print_int(1)") ==
+            *make_unique<FunctionCall>(make_unique<Identifier>("print_int"),
                                        std::move(args)));
 
     args.clear();

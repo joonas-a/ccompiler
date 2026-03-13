@@ -34,11 +34,6 @@ struct Literal : Expression {
   explicit Literal(bool x) : value(x) {};
   explicit Literal(std::monostate u) : value(u) {};
 
-  // template <typename T>
-  //   requires(std::is_integral_v<std::decay_t<T>> &&
-  //            !std::is_same_v<std::decay_t<T>, bool>)
-  // explicit Literal(T) = delete;
-
   C_type accept(TypeChecker &tc) const override;
   IRVar accept(IRGenerator &ir) const override;
 
