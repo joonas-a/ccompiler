@@ -3,14 +3,13 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include <utility>
 #include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
 #include "errors.h"
 #include "expression.h"
-#include "util.h"
 
 using namespace std;
 
@@ -25,7 +24,7 @@ static const vector<vector<string_view>> la_binary_ops = {
 UPtrExpr parse(const vector<Token> &tokens) {
   ssize_t pos = 0;
 
-  function<UPtrExpr()> parse_expr_left_assoc;
+  function<UPtrExpr()> parse_expr;
   function<UPtrExpr()> parse_factor;
 
   auto peek = [&](ssize_t offset = 0) -> const Token & {
@@ -55,7 +54,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
                             " but found: " + token.as_string());
         }
       } else {
-        if (!find_in(token.text, get<1>(*expected)))
+        if (!std::ranges::contains(get<1>(*expected), token.text))
           throw SyntaxError("Consume: Unexpected token: " + token.text);
       }
     }
@@ -89,11 +88,11 @@ UPtrExpr parse(const vector<Token> &tokens) {
     vector<UPtrExpr> args{};
 
     if (peek().text != ")") {
-      args.emplace_back(parse_expr_left_assoc());
+      args.emplace_back(parse_expr());
 
       while (peek().text == ",") {
         consume(",");
-        args.emplace_back(parse_expr_left_assoc());
+        args.emplace_back(parse_expr());
       }
     }
 
@@ -121,20 +120,20 @@ UPtrExpr parse(const vector<Token> &tokens) {
 
   auto parse_parenthesized = [&]() {
     consume("(");
-    auto expr = parse_expr_left_assoc();
+    auto expr = parse_expr();
     consume(")");
     return expr;
   };
 
   auto parse_conditional = [&]() -> UPtrExpr {
     consume("if");
-    auto condition = parse_expr_left_assoc();
+    auto condition = parse_expr();
     consume("then");
-    auto then_branch = parse_expr_left_assoc();
+    auto then_branch = parse_expr();
 
     if (peek().text == "else") {
       consume(nullopt);
-      auto else_branch = parse_expr_left_assoc();
+      auto else_branch = parse_expr();
 
       return make_unique<IfThenElseStatement>(
           std::move(condition), std::move(then_branch), std::move(else_branch));
@@ -158,12 +157,11 @@ UPtrExpr parse(const vector<Token> &tokens) {
                         token.as_string());
     }
     consume("=");
-    return make_unique<Variable>(token.text, parse_expr_left_assoc());
+    return make_unique<Variable>(token.text, parse_expr());
   };
 
   auto parse_block_content = [&](bool explicit_block) -> UPtrExpr {
-    auto expr =
-        peek().text == "var" ? parse_variable() : parse_expr_left_assoc();
+    auto expr = peek().text == "var" ? parse_variable() : parse_expr();
 
     if (explicit_block || peek().text == ";") {
       vector<UPtrExpr> exprs;
@@ -172,18 +170,16 @@ UPtrExpr parse(const vector<Token> &tokens) {
       while (true) {
         if (peek().text == ";") {
           consume(nullopt);
-
           if (peek().type == Kind::END || peek().text == "}") {
             exprs.emplace_back(make_unique<Literal>(monostate()));
           } else {
-            exprs.emplace_back(parse_expr_left_assoc());
+            exprs.emplace_back(parse_expr());
           }
           continue;
         }
 
         if (peek().text == "{") {
-          auto expr =
-              peek().text == "var" ? parse_variable() : parse_expr_left_assoc();
+          auto expr = peek().text == "var" ? parse_variable() : parse_expr();
           exprs.push_back(std::move(expr));
           continue;
         }
@@ -213,9 +209,9 @@ UPtrExpr parse(const vector<Token> &tokens) {
 
   auto parse_loop = [&]() {
     consume("while");
-    auto cond = parse_expr_left_assoc();
+    auto cond = parse_expr();
     consume("do");
-    return make_unique<While>(std::move(cond), parse_expr_left_assoc());
+    return make_unique<While>(std::move(cond), parse_expr());
   };
 
   parse_factor = [&]() -> UPtrExpr {
@@ -245,35 +241,27 @@ UPtrExpr parse(const vector<Token> &tokens) {
                       token.text);
   };
 
-  auto parse_expr_right_assoc = [&](UPtrExpr left) -> UPtrExpr {
-    unique_ptr<BinaryOp> right;
+  function<UPtrExpr(size_t)> parse_prec_level = [&](size_t level) {
+    if (level >= la_binary_ops.size())
+      return parse_factor();
+
+    auto left = parse_prec_level(level + 1);
+
+    while (std::ranges::contains(la_binary_ops[level], peek().text)) {
+      const auto token = consume(nullopt);
+      left = make_unique<BinaryOp>(std::move(left), token.text,
+                                   parse_prec_level(level + 1));
+    }
+    return left;
+  };
+
+  parse_expr = [&]() {
+    auto left = parse_prec_level(0);
 
     while (peek().text.contains("="sv)) {
       const auto token = consume(nullopt);
 
-      right = make_unique<BinaryOp>(std::move(left), token.text,
-                                    parse_expr_left_assoc());
-    }
-
-    verify_syntax();
-    return right;
-  };
-
-  parse_expr_left_assoc = [&]() {
-    auto left = parse_factor();
-
-    for (auto prec_ops = la_binary_ops.rbegin();
-         prec_ops != la_binary_ops.rend(); ++prec_ops) {
-      while (find_in(peek().text, *prec_ops)) {
-        const auto token = consume(nullopt);
-
-        left =
-            make_unique<BinaryOp>(std::move(left), token.text, parse_factor());
-      }
-    }
-
-    if (peek().text == "=") {
-      return parse_expr_right_assoc(std::move(left));
+      left = make_unique<BinaryOp>(std::move(left), token.text, parse_expr());
     }
 
     verify_syntax();

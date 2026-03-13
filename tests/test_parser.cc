@@ -69,6 +69,25 @@ TEST_CASE("Parser valid input", "[parser]") {
                                    ">=", make_unique<Identifier>("b")));
   }
 
+  SECTION("Precedence") {
+    REQUIRE(*parse("1+2*3") ==
+            *make_unique<BinaryOp>(
+                make_unique<Literal>(1L), "+",
+                make_unique<BinaryOp>(make_unique<Literal>(2L), "*",
+                                      make_unique<Literal>(3L))));
+
+    REQUIRE(*parse("3*5+6") ==
+            *make_unique<BinaryOp>(
+                make_unique<BinaryOp>(make_unique<Literal>(3L), "*",
+                                      make_unique<Literal>(5L)),
+                "+", make_unique<Literal>(6L)));
+
+    REQUIRE(*parse("1- -1") ==
+            *make_unique<BinaryOp>(
+                make_unique<Literal>(1L), "-",
+                make_unique<UnaryOp>("-", make_unique<Literal>(1L))));
+  }
+
   SECTION("Binary ops !=, ==") {
     REQUIRE(*parse("b != a") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("b"),
