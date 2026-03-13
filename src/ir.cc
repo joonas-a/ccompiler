@@ -13,7 +13,6 @@ struct SymTab;
 // TODOS:
 // Symbol table incl. all functions etc
 // Scopes
-// Printing
 // keywords and, or, ...
 
 namespace compiler {
@@ -38,7 +37,7 @@ IRVar IRGenerator::visit(const Literal &e) {
         using T = std::decay_t<decltype(arg)>;
 
         const auto var = this->utils.generate_var();
-        if constexpr (std::is_same_v<T, int>) {
+        if constexpr (std::is_same_v<T, long>) {
           this->ins.emplace_back(LoadIntConst{arg, var});
           return var;
         } else if constexpr (std::is_same_v<T, bool>) {

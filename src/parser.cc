@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <utility>
+#include <string>
 #include <variant>
 #include <vector>
 
@@ -80,7 +81,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
     }
 
     auto token = consume(nullopt);
-    return make_unique<Literal>(stoi(token.text));
+    return make_unique<Literal>(stol(token.text));
   };
 
   auto parse_function = [&](unique_ptr<Identifier> name) {

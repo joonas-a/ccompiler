@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <memory>
 #include <ostream>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
@@ -27,11 +28,16 @@ struct Expression {
 using UPtrExpr = std::unique_ptr<Expression>;
 
 struct Literal : Expression {
-  std::variant<int, bool, std::monostate> value;
+  std::variant<long, bool, std::monostate> value;
 
-  explicit Literal(int i) : value(i) {};
+  explicit Literal(long i) : value(i) {};
   explicit Literal(bool x) : value(x) {};
   explicit Literal(std::monostate u) : value(u) {};
+
+  // template <typename T>
+  //   requires(std::is_integral_v<std::decay_t<T>> &&
+  //            !std::is_same_v<std::decay_t<T>, bool>)
+  // explicit Literal(T) = delete;
 
   C_type accept(TypeChecker &tc) const override;
   IRVar accept(IRGenerator &ir) const override;

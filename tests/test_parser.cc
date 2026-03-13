@@ -22,43 +22,43 @@ auto parse(string_view input) {
 
 TEST_CASE("Parser valid input", "[parser]") {
   SECTION("Single literal") {
-    REQUIRE(*parse("1") == *make_unique<Literal>(1));
-    REQUIRE(*parse("123") == *make_unique<Literal>(123));
+    REQUIRE(*parse("1") == *make_unique<Literal>(1L));
+    REQUIRE(*parse("123") == *make_unique<Literal>(123L));
     REQUIRE(*parse("abcd") == *make_unique<Identifier>("abcd"));
   }
 
   SECTION("Binary ops +, -") {
     REQUIRE(*parse("2+550") ==
-            *make_unique<BinaryOp>(make_unique<Literal>(2), "+",
-                                   make_unique<Literal>(550)));
+            *make_unique<BinaryOp>(make_unique<Literal>(2L), "+",
+                                   make_unique<Literal>(550L)));
 
     REQUIRE(*parse("310-999") ==
-            *make_unique<BinaryOp>(make_unique<Literal>(310), "-",
-                                   make_unique<Literal>(999)));
+            *make_unique<BinaryOp>(make_unique<Literal>(310L), "-",
+                                   make_unique<Literal>(999L)));
   }
 
   SECTION("Binary ops *, %") {
     REQUIRE(*parse("2*550") ==
-            *make_unique<BinaryOp>(make_unique<Literal>(2), "*",
-                                   make_unique<Literal>(550)));
+            *make_unique<BinaryOp>(make_unique<Literal>(2L), "*",
+                                   make_unique<Literal>(550L)));
 
     REQUIRE(*parse("310 / 999") ==
-            *make_unique<BinaryOp>(make_unique<Literal>(310), "/",
-                                   make_unique<Literal>(999)));
+            *make_unique<BinaryOp>(make_unique<Literal>(310L), "/",
+                                   make_unique<Literal>(999L)));
 
     REQUIRE(*parse("310 % 999") ==
-            *make_unique<BinaryOp>(make_unique<Literal>(310), "%",
-                                   make_unique<Literal>(999)));
+            *make_unique<BinaryOp>(make_unique<Literal>(310L), "%",
+                                   make_unique<Literal>(999L)));
   }
 
   SECTION("Binary ops <, <=, >, >=") {
     REQUIRE(*parse("2<550") ==
-            *make_unique<BinaryOp>(make_unique<Literal>(2), "<",
-                                   make_unique<Literal>(550)));
+            *make_unique<BinaryOp>(make_unique<Literal>(2L), "<",
+                                   make_unique<Literal>(550L)));
 
     REQUIRE(*parse("31 <= 32") ==
-            *make_unique<BinaryOp>(make_unique<Literal>(31),
-                                   "<=", make_unique<Literal>(32)));
+            *make_unique<BinaryOp>(make_unique<Literal>(31L),
+                                   "<=", make_unique<Literal>(32L)));
 
     REQUIRE(*parse("b>a") ==
             *make_unique<BinaryOp>(make_unique<Identifier>("b"), ">",
@@ -74,8 +74,8 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<BinaryOp>(make_unique<Identifier>("b"),
                                    "!=", make_unique<Identifier>("a")));
     REQUIRE(*parse("3 == 3") ==
-            *make_unique<BinaryOp>(make_unique<Literal>(3),
-                                   "==", make_unique<Literal>(3)));
+            *make_unique<BinaryOp>(make_unique<Literal>(3L),
+                                   "==", make_unique<Literal>(3L)));
   }
 
   SECTION("Binary ops and, or") {
@@ -89,9 +89,9 @@ TEST_CASE("Parser valid input", "[parser]") {
 
   SECTION("Unary ops -, not") {
     REQUIRE(*parse("not 2") ==
-            *make_unique<UnaryOp>("not", make_unique<Literal>(2)));
+            *make_unique<UnaryOp>("not", make_unique<Literal>(2L)));
     REQUIRE(*parse("-2") ==
-            *make_unique<UnaryOp>("-", make_unique<Literal>(2)));
+            *make_unique<UnaryOp>("-", make_unique<Literal>(2L)));
     REQUIRE(*parse("b and not a") ==
             *make_unique<BinaryOp>(
                 make_unique<Identifier>("b"), "and",
@@ -104,12 +104,12 @@ TEST_CASE("Parser valid input", "[parser]") {
                     make_unique<UnaryOp>("-", make_unique<Identifier>("a")))));
     REQUIRE(*parse("1--2") ==
             *make_unique<BinaryOp>(
-                make_unique<Literal>(1), "-",
-                make_unique<UnaryOp>("-", make_unique<Literal>(2))));
+                make_unique<Literal>(1L), "-",
+                make_unique<UnaryOp>("-", make_unique<Literal>(2L))));
     REQUIRE(*parse("-1-1") ==
             *make_unique<BinaryOp>(
-                make_unique<UnaryOp>("-", make_unique<Literal>(1)), "-",
-                make_unique<Literal>(1)));
+                make_unique<UnaryOp>("-", make_unique<Literal>(1L)), "-",
+                make_unique<Literal>(1L)));
   }
 
   SECTION("Parenthesised input") {
@@ -132,21 +132,21 @@ TEST_CASE("Parser valid input", "[parser]") {
     REQUIRE(*parse("if a then 1 + c else x * 2") ==
             *make_unique<IfThenElseStatement>(
                 make_unique<Identifier>("a"),
-                make_unique<BinaryOp>(make_unique<Literal>(1), "+",
+                make_unique<BinaryOp>(make_unique<Literal>(1L), "+",
                                       make_unique<Identifier>("c")),
                 make_unique<BinaryOp>(make_unique<Identifier>("x"), "*",
-                                      make_unique<Literal>(2))));
+                                      make_unique<Literal>(2L))));
 
     REQUIRE(*compiler::parse(
                 compiler::tokenize("if a then (1 + c) * 3 else x * 2")) ==
             *make_unique<IfThenElseStatement>(
                 make_unique<Identifier>("a"),
                 make_unique<BinaryOp>(
-                    make_unique<BinaryOp>(make_unique<Literal>(1), "+",
+                    make_unique<BinaryOp>(make_unique<Literal>(1L), "+",
                                           make_unique<Identifier>("c")),
-                    "*", make_unique<Literal>(3)),
+                    "*", make_unique<Literal>(3L)),
                 make_unique<BinaryOp>(make_unique<Identifier>("x"), "*",
-                                      make_unique<Literal>(2))));
+                                      make_unique<Literal>(2L))));
   }
 
   SECTION("Nested if else") {
@@ -155,7 +155,7 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<IfThenElseStatement>(
                 make_unique<Identifier>("a"),
                 make_unique<IfThenElseStatement>(make_unique<Identifier>("b"),
-                                                 make_unique<Literal>(10),
+                                                 make_unique<Literal>(10L),
                                                  make_unique<Identifier>("d")),
 
                 make_unique<Identifier>("e")));
@@ -180,13 +180,13 @@ TEST_CASE("Parser valid input", "[parser]") {
                                       make_unique<Identifier>("c"))));
     REQUIRE(*parse("1 * 1 = 2 % 2 = 0") ==
             *make_unique<BinaryOp>(
-                make_unique<BinaryOp>(make_unique<Literal>(1), "*",
-                                      make_unique<Literal>(1)),
+                make_unique<BinaryOp>(make_unique<Literal>(1L), "*",
+                                      make_unique<Literal>(1L)),
                 "=",
                 make_unique<BinaryOp>(
-                    make_unique<BinaryOp>(make_unique<Literal>(2), "%",
-                                          make_unique<Literal>(2)),
-                    "=", make_unique<Literal>(0))));
+                    make_unique<BinaryOp>(make_unique<Literal>(2L), "%",
+                                          make_unique<Literal>(2L)),
+                    "=", make_unique<Literal>(0L))));
   }
 
   SECTION("Function calls") {
@@ -204,7 +204,7 @@ TEST_CASE("Parser valid input", "[parser]") {
 
     args.clear();
     args.emplace_back(std::make_unique<BinaryOp>(
-        std::make_unique<Literal>(10), "*", std::make_unique<Literal>(5)));
+        std::make_unique<Literal>(10L), "*", std::make_unique<Literal>(5L)));
     args.emplace_back(std::make_unique<Identifier>("a"));
     REQUIRE(*parse("plus_fifty(10*5,a)") ==
             *make_unique<FunctionCall>(make_unique<Identifier>("plus_fifty"),
@@ -243,15 +243,15 @@ TEST_CASE("Parser valid input", "[parser]") {
     REQUIRE(*parse("a+b;") == *make_unique<Block>(std::move(exprs)));
 
     exprs.clear();
-    exprs.emplace_back(make_unique<Literal>(1));
-    exprs.emplace_back(make_unique<Literal>(2));
+    exprs.emplace_back(make_unique<Literal>(1L));
+    exprs.emplace_back(make_unique<Literal>(2L));
 
     REQUIRE(*parse("1;2") == *make_unique<Block>(std::move(exprs)));
 
     exprs.clear();
     exprs.emplace_back(make_unique<Identifier>("a"));
     exprs.emplace_back(make_unique<BinaryOp>(make_unique<Identifier>("x"), "=",
-                                             make_unique<Literal>(2)));
+                                             make_unique<Literal>(2L)));
     exprs.emplace_back(make_unique<Identifier>("z"));
 
     REQUIRE(*parse("{a;x=2;z}") == *make_unique<Block>(std::move(exprs)));
@@ -259,18 +259,18 @@ TEST_CASE("Parser valid input", "[parser]") {
 
   SECTION("Variable declarations") {
     REQUIRE(*parse("var x = 123") ==
-            *make_unique<Variable>("x", make_unique<Literal>(123)));
+            *make_unique<Variable>("x", make_unique<Literal>(123L)));
 
     REQUIRE(*parse("var x = 1 + 2") ==
             *make_unique<Variable>(
-                "x", make_unique<BinaryOp>(make_unique<Literal>(1), "+",
-                                           make_unique<Literal>(2))));
+                "x", make_unique<BinaryOp>(make_unique<Literal>(1L), "+",
+                                           make_unique<Literal>(2L))));
   }
 
   SECTION("While loops") {
-    REQUIRE(
-        *parse("while 1 do 2") ==
-        *make_unique<While>(make_unique<Literal>(1), make_unique<Literal>(2)));
+    REQUIRE(*parse("while 1 do 2") ==
+            *make_unique<While>(make_unique<Literal>(1L),
+                                make_unique<Literal>(2L)));
   }
 }
 
