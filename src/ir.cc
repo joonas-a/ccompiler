@@ -75,7 +75,7 @@ IRVar IRGenerator::visit(const BinaryOp &e) {
     this->ins.emplace_back(Jump{end_label});
 
     this->ins.emplace_back(skip_label);
-    this->ins.emplace_back(LoadBoolConst{true, dst});
+    this->ins.emplace_back(LoadBoolConst{is_or ? true : false, dst});
     this->ins.emplace_back(Jump{end_label});
 
     this->ins.emplace_back(end_label);
