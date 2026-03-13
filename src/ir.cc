@@ -1,6 +1,6 @@
 #include <tuple>
 #include <type_traits>
-#include <unordered_set>
+#include <vector>
 
 #include "expression.h"
 #include "ir.h"
@@ -170,7 +170,7 @@ IRVar IRUtils::generate_var() {
   ++var_count;
 
   const auto new_var = std::format("x{}", var_count);
-  this->ir_vars.emplace(new_var);
+  this->ir_vars.push_back(new_var);
 
   return new_var;
 }

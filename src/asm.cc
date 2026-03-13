@@ -1,7 +1,5 @@
 #include <format>
-#include <iostream>
 #include <limits>
-#include <ostream>
 #include <print>
 #include <stdexcept>
 #include <type_traits>
@@ -13,7 +11,7 @@ namespace compiler {
 
 using std::format;
 
-void Locals::init_stack(IRVarSet &ir_vars) {
+void Locals::init_stack(IRVarVec &ir_vars) {
   for (const auto var : ir_vars) {
     ++this->stack_used;
     this->ir_var_map.emplace(var, format("-{}(%rbp)", 8 * this->stack_used));
@@ -24,11 +22,6 @@ std::string Locals::get_addr_for(IRVar var) {
   if (auto it = this->ir_var_map.find(var); it != this->ir_var_map.end()) {
     return it->second;
   }
-  // for (auto var : this->ir_var_map)
-
-  // std::cout << this->stack_used << "stack used" << std::endl;
-  // std::cout << this-><< "stack used" << std::endl;
-
   throw std::runtime_error("Variable not allocated");
 }
 
@@ -43,12 +36,15 @@ void AssemblyGenerator::start_boiler() {
   this->emit(".type main, @function");
   this->emit("");
   this->emit("main:");
+  this->emit_ir_vars();
   this->emit("");
   this->emit("pushq %rbp");
   this->emit("movq %rsp, %rbp");
   this->emit(format("subq ${}, %rsp", this->locals.stack_used * 8));
+  this->emit("");
 }
 
+// Maybe useless
 void AssemblyGenerator::end_boiler() {
   this->emit(".Lend");
   this->emit("movq $0, %rax");
@@ -63,10 +59,15 @@ void AssemblyGenerator::end_boiler() {
   // this->emit(".asciz \"%ld\"\n");
 }
 
-void AssemblyGenerator::print() {
+void AssemblyGenerator::print_asm() {
   for (auto &line : this->lines) {
     std::println("{}", line);
   }
+}
+
+void AssemblyGenerator::emit_ir_vars() {
+  for (auto &var : this->locals.ir_var_map)
+    this->emit(format("# {} in {}", var.first, var.second));
 }
 
 void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
@@ -84,17 +85,17 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
             emit("# LoadIntConst");
             if (std::numeric_limits<int>::min() <= in.value &&
                 in.value < std::numeric_limits<int>::max()) {
-              emit(
-                  format("movq {}, {}", in.value, locals.get_addr_for(in.dst)));
+              emit(format("movq ${}, {}", in.value,
+                          locals.get_addr_for(in.dst)));
             } else {
-              emit(format("movabsq {}, %rax", in.value));
+              emit(format("movabsq ${}, %rax", in.value));
               emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             }
 
           } else if constexpr (std::is_same_v<T, LoadBoolConst>) {
             emit("# LoadBoolConst");
-            in.value ? emit(format("movq 1, {}", locals.get_addr_for(in.dst)))
-                     : emit(format("movq 0, {}", locals.get_addr_for(in.dst)));
+            in.value ? emit(format("movq $1, {}", locals.get_addr_for(in.dst)))
+                     : emit(format("movq $0, {}", locals.get_addr_for(in.dst)));
 
           } else if constexpr (std::is_same_v<T, Jump>) {
             emit("# Jump");
@@ -110,7 +111,6 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
             emit(format("cmpq $0 {}", locals.get_addr_for(in.cond)));
             emit(format("jne .L{}", in.then_label.text));
             emit(format("jmp .L{}", in.else_label.text));
-            // }
 
           } else if constexpr (std::is_same_v<T, Call>) {
             emit("# Call");
@@ -175,8 +175,8 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
               emit("setge %al");
               emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             }
-            emit("");
           }
+          emit("");
         },
         instruction);
   };
@@ -192,9 +192,9 @@ auto generate_assembly(IRGenerator &&ir_gen) {
 
   asm_gen.generate(ir_gen.ins);
 
-  asm_gen.end_boiler();
+  // asm_gen.end_boiler();
 
-  asm_gen.print();
+  asm_gen.print_asm();
 
   return asm_gen.lines;
 }

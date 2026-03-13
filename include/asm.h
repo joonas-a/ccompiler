@@ -1,20 +1,20 @@
 #pragma once
 
 #include <cstddef>
-#include <unordered_map>
-#include <unordered_set>
+#include <map>
+#include <vector>
 
 #include "ir.h"
 
 namespace compiler {
 
-using IRVarSet = std::unordered_set<IRVar>;
+using IRVarVec = std::vector<IRVar>;
 
 struct Locals {
   size_t stack_used{};
-  std::unordered_map<IRVar, std::string> ir_var_map{};
+  std::map<IRVar, std::string> ir_var_map{};
 
-  void init_stack(IRVarSet &ir_vars);
+  void init_stack(IRVarVec &ir_vars);
   std::string get_addr_for(IRVar var);
 };
 
@@ -29,7 +29,8 @@ struct AssemblyGenerator {
   void start_boiler();
   void end_boiler();
   void generate(std::vector<Instruction> &instructions);
-  void print();
+  void emit_ir_vars();
+  void print_asm();
 };
 
 } // namespace compiler

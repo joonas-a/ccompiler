@@ -67,7 +67,7 @@ struct IRUtils {
   size_t var_count{};
   size_t label_count{};
 
-  std::unordered_set<IRVar> ir_vars{};
+  std::vector<IRVar> ir_vars{};
   IRVar generate_var();
   Labels generate_labels(bool is_while);
   size_t size_of();
