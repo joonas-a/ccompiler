@@ -59,6 +59,26 @@ IRVar IRGenerator::visit(const Literal &e) {
 
 IRVar IRGenerator::visit(const BinaryOp &e) {
   const auto lhs_t = e.lhs->accept(*this);
+
+  if (e.op == "or") {
+    const auto [rhs_label, skip_label, end_label] = this->utils.generate_labels("or");
+
+    this->ins.emplace_back(CondJump{lhs_t, skip_label, rhs_label});
+
+    this->ins.emplace_back(rhs_label);
+    const auto rhs_t = e.rhs->accept(*this);
+    const auto dst = this->utils.generate_var();
+    this->ins.emplace_back(Copy{rhs_t, dst});
+    this->ins.emplace_back(Jump{end_label});
+
+    this->ins.emplace_back(skip_label);
+    this->ins.emplace_back(LoadBoolConst{true, dst});
+    this->ins.emplace_back(Jump{end_label});
+
+    this->ins.emplace_back(end_label);
+    return dst;
+  }
+
   const auto rhs_t = e.rhs->accept(*this);
 
   std::vector<IRVar> args{lhs_t, rhs_t};
@@ -77,7 +97,7 @@ IRVar IRGenerator::visit(const UnaryOp &e) {
 }
 
 IRVar IRGenerator::visit(const IfThenStatement &e) {
-  const auto [then_label, end_label, _] = this->utils.generate_labels(false);
+  const auto [then_label, end_label, _] = this->utils.generate_labels("ifthen");
 
   const auto cond = e.condition->accept(*this);
   this->ins.emplace_back(CondJump{cond, then_label, end_label});
@@ -93,7 +113,7 @@ IRVar IRGenerator::visit(const IfThenStatement &e) {
 
 IRVar IRGenerator::visit(const IfThenElseStatement &e) {
   const auto [then_label, end_label, else_label] =
-      this->utils.generate_labels(false);
+      this->utils.generate_labels("ifthenelse");
 
   auto return_var = this->utils.generate_var();
 
@@ -129,7 +149,7 @@ IRVar IRGenerator::visit(const Block &e) {
 
 IRVar IRGenerator::visit(const While &e) {
   const auto [start_label, body_label, end_label] =
-      this->utils.generate_labels(true);
+      this->utils.generate_labels("while");
 
   this->ins.emplace_back(start_label);
   const auto cond_var = e.cond->accept(*this);
@@ -186,15 +206,11 @@ IRVar IRUtils::generate_var() {
   return new_var;
 }
 
-Labels IRUtils::generate_labels(bool is_while) {
+Labels IRUtils::generate_labels(std::string_view keyword) {
   ++label_count;
-  return is_while ? std::make_tuple(std::format("while_start{}", label_count),
-                                    std::format("while_body{}", label_count),
-                                    std::format("while_end{}", label_count))
-
-                  : std::make_tuple(std::format("then{}", label_count),
-                                    std::format("if_end{}", label_count),
-                                    std::format("else_end{}", label_count));
+  return std::make_tuple(std::format("main_{}_right{}", keyword, label_count),
+                         std::format("main_{}_skip{}", keyword, label_count),
+                         std::format("main_{}_end{}", keyword, label_count));
 }
 
 IRGenerator generate_ir(UPtrExpr &root, C_type root_type) {

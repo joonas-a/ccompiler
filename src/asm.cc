@@ -82,8 +82,7 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
           using T = std::decay_t<decltype(in)>;
 
           if constexpr (std::is_same_v<T, Label>) {
-            emit(format("# Label {}", in.text));
-            emit(format(".L{}", in.text));
+            emit(format(".L{}:", in.text));
 
           } else if constexpr (std::is_same_v<T, LoadIntConst>) {
             // TODO: make sure bound checking works
@@ -104,7 +103,7 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
 
           } else if constexpr (std::is_same_v<T, Jump>) {
             emit("# Jump");
-            emit(format("jmp .L{}", locals.get_addr_for(in.label.text)));
+            emit(format("jmp .L{}", in.label.text));
 
           } else if constexpr (std::is_same_v<T, Copy>) {
             emit("# Copy");
@@ -113,7 +112,7 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
 
           } else if constexpr (std::is_same_v<T, CondJump>) {
             emit("# CondJump");
-            emit(format("cmpq $0 {}", locals.get_addr_for(in.cond)));
+            emit(format("cmpq $0, {}", locals.get_addr_for(in.cond)));
             emit(format("jne .L{}", in.then_label.text));
             emit(format("jmp .L{}", in.else_label.text));
 

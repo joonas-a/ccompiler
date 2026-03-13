@@ -68,7 +68,7 @@ struct IRUtils {
 
   std::vector<IRVar> ir_vars{};
   IRVar generate_var();
-  Labels generate_labels(bool is_while);
+  Labels generate_labels(std::string_view keyword);
 };
 
 struct IRGenerator {
