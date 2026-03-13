@@ -64,9 +64,6 @@ C_type TypeChecker::visit(const BinaryOp &e) {
   if ((e.op == "==" || e.op == "!=") && lhs_t != rhs_t)
     throw runtime_error("Non matching arg type with equality check");
 
-  // // println("Unknown binaryop for: {} {} {}", static_cast<int>(lhs_t), e.op,
-  //         static_cast<int>(rhs_t));
-
   throw runtime_error("Unknown BinaryOp");
 }
 

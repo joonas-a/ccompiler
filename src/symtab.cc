@@ -95,7 +95,6 @@ const Scope kGlobals{
      }},
     {"read_int",
      FnType{
-         C_type::C_unit,
          C_type::C_int,
      }},
 };

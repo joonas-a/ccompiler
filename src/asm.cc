@@ -13,15 +13,21 @@ using std::format;
 
 void Locals::init_stack(IRVarVec &ir_vars) {
   for (const auto var : ir_vars) {
+    if (var == "unit")
+      continue;
     ++this->stack_used;
     this->ir_var_map.emplace(var, format("-{}(%rbp)", 8 * this->stack_used));
   }
 }
 
 std::string Locals::get_addr_for(IRVar var) {
-  if (auto it = this->ir_var_map.find(var); it != this->ir_var_map.end()) {
+  if (auto it = this->ir_var_map.find(var); it != this->ir_var_map.end())
     return it->second;
-  }
+
+  std::println("\n!!! Addr not found for {}", var);
+  for (auto &x : ir_var_map)
+    std::println("{} -> {}", x.first, x.second);
+
   throw std::runtime_error("Variable not allocated");
 }
 
@@ -189,6 +195,9 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
               emit(format("movq {}, %rdi", locals.get_addr_for(in.args[0])));
               emit(format("callq print_bool"));
               emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
+            } else if (in.fn == "read_int") {
+              emit(format("callq read_int"));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             }
           }
           emit("");
@@ -202,6 +211,8 @@ auto generate_assembly(IRGenerator &&ir_gen) {
   locals.init_stack(ir_gen.utils.ir_vars);
 
   AssemblyGenerator asm_gen{locals};
+
+  std::println("# IRVars = {}", ir_gen.utils.ir_vars.size());
 
   asm_gen.start_boiler();
 

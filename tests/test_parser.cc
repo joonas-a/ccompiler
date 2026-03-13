@@ -211,6 +211,22 @@ TEST_CASE("Parser valid input", "[parser]") {
                                        std::move(args)));
   }
 
+  SECTION("Nested function call: print_int(read_int())") {
+    auto args = std::vector<std::unique_ptr<Expression>>{};
+
+    {
+      auto innerArgs = std::vector<std::unique_ptr<Expression>>{};
+      auto innerCall = std::make_unique<FunctionCall>(
+          std::make_unique<Identifier>("read_int"), std::move(innerArgs));
+
+      args.emplace_back(std::move(innerCall));
+    }
+
+    REQUIRE(*parse("print_int(read_int())") ==
+            *make_unique<FunctionCall>(make_unique<Identifier>("print_int"),
+                                       std::move(args)));
+  }
+
   SECTION("Blocks") {
     auto exprs = std::vector<std::unique_ptr<Expression>>{};
     exprs.emplace_back(make_unique<Identifier>("a"));

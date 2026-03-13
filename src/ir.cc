@@ -37,18 +37,22 @@ IRVar IRGenerator::visit(const Literal &e) {
       [this](const auto &arg) {
         using T = std::decay_t<decltype(arg)>;
 
+        if constexpr (std::is_same_v<T, std::monostate>) {
+          return IRVar{"unit"};
+        }
 
         const auto var = this->utils.generate_var();
+
         if constexpr (std::is_same_v<T, long>) {
           this->ins.emplace_back(LoadIntConst{arg, var});
           return var;
-        } else if constexpr (std::is_same_v<T, bool>) {
+        }
+
+        if constexpr (std::is_same_v<T, bool>) {
           this->ins.emplace_back(LoadBoolConst{arg, var});
           return var;
-        } else if constexpr (std::is_same_v<T, std::monostate>) {
-          return IRVar{"unit"};
-        } else
-          throw std::runtime_error("Unknown literal");
+        }
+        throw std::runtime_error("Unknown literal");
       },
       e.value);
 }
@@ -144,6 +148,7 @@ IRVar IRGenerator::visit(const While &e) {
 // TODO: make scopes work
 IRVar IRGenerator::visit(const Variable &e) {
   const auto rhs = e.value->accept(*this);
+  std::println("# IR variable");
   const auto lhs = this->utils.generate_var();
 
   this->sym_tab.emplace(e.name, lhs);
@@ -167,7 +172,9 @@ IRVar IRGenerator::visit(const FunctionCall &e) {
   const auto dst = this->utils.generate_var();
   this->ins.emplace_back(Call{fn_name, args, dst});
 
-  return "unit";
+  std::println("# IR: Fn call return");
+
+  return dst;
 }
 
 IRVar IRUtils::generate_var() {
@@ -198,8 +205,11 @@ IRGenerator generate_ir(UPtrExpr &root, C_type root_type) {
   auto root_ir_var = root->accept(ir_gen);
 
   if (root_type != C_type::C_unit) {
+    std::println("# Root result either int or bool");
     auto dst = ir_gen.utils.generate_var();
     auto args = std::vector<IRVar>{root_ir_var};
+
+    println("# Args[0] = {}", args[0]);
 
     if (root_type == C_type::C_int)
       ir_gen.ins.emplace_back(Call{"print_int", args, dst});
