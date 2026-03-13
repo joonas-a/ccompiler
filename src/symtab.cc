@@ -1,7 +1,5 @@
-#include <print>
-
-#include "datatypes.h"
 #include "symtab.h"
+#include "datatypes.h"
 
 const Scope kGlobals{
     {"+",
@@ -108,7 +106,6 @@ void SymTab::add_scope() { stack.emplace_back(); }
 void SymTab::remove_scope() { stack.pop_back(); }
 
 void SymTab::add(std::string name, C_type symbol) {
-  // std::println("Adding {} with enum val {}", name, static_cast<int>(symbol));
   stack.back().emplace(std::move(name), symbol);
 }
 

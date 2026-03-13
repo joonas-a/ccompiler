@@ -6,8 +6,8 @@
 
 static auto generate_assembly(std::string_view input) {
   auto ast = compiler::parse(compiler::tokenize(input));
-  typecheck(std::move(ast));
-  generate_assembly(generate_ir(ast));
+  auto root_type = typecheck(std::move(ast));
+  generate_assembly(generate_ir(ast, root_type));
 }
 
 int main(int argc, char *argv[]) {

@@ -90,7 +90,7 @@ TEST_CASE("Parser valid input", "[parser]") {
   SECTION("Unary ops -, not") {
     REQUIRE(*parse("not 2") ==
             *make_unique<UnaryOp>("not", make_unique<Literal>(2)));
-    REQUIRE(*parse("- 2") ==
+    REQUIRE(*parse("-2") ==
             *make_unique<UnaryOp>("-", make_unique<Literal>(2)));
     REQUIRE(*parse("b and not a") ==
             *make_unique<BinaryOp>(

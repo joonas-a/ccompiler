@@ -45,6 +45,7 @@ void AssemblyGenerator::start_boiler() {
 }
 
 void AssemblyGenerator::end_boiler() {
+  this->emit("# Return");
   this->emit("movq $0, %rax");
   this->emit("movq %rbp, %rsp");
   this->emit("popq %rbp");
@@ -111,7 +112,7 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
             emit(format("jmp .L{}", in.else_label.text));
 
           } else if constexpr (std::is_same_v<T, Call>) {
-            emit("# Call");
+            emit(format("# Call {}", in.fn));
 
             if (in.fn == "+") {
               emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
@@ -171,6 +172,22 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
               emit(format("movq {}, %rdx", locals.get_addr_for(in.args[0])));
               emit(format("cmpq {}, %rdx", locals.get_addr_for(in.args[1])));
               emit("setge %al");
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
+            } else if (in.fn == "unary_-") {
+              emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
+              emit(format("negq %rax"));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
+            } else if (in.fn == "unary_not") {
+              emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
+              emit(format("xorq $1, %rax"));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
+            } else if (in.fn == "print_int") {
+              emit(format("movq {}, %rdi", locals.get_addr_for(in.args[0])));
+              emit(format("callq print_int"));
+              emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
+            } else if (in.fn == "print_bool") {
+              emit(format("movq {}, %rdi", locals.get_addr_for(in.args[0])));
+              emit(format("callq print_bool"));
               emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
             }
           }

@@ -5,6 +5,9 @@
 #include "expression.h"
 #include "ir.h"
 
+// IRGen assumes a thorough typechecking has been done and
+// existence of any identifiers / other symbols confirmed
+
 struct SymTab;
 
 // TODOS:
@@ -64,7 +67,7 @@ IRVar IRGenerator::visit(const UnaryOp &e) {
   const auto args = std::vector<IRVar>{e.expr->accept(*this)};
   const auto dst = this->utils.generate_var();
 
-  this->ins.emplace_back(Call{e.op, args, dst});
+  this->ins.emplace_back(Call{std::format("unary_{}", e.op), args, dst});
   return dst;
 }
 
@@ -149,7 +152,6 @@ IRVar IRGenerator::visit(const Variable &e) {
 }
 
 IRVar IRGenerator::visit(const Identifier &e) {
-  // Existence already verified in typechecker
   return this->sym_tab.find(e.value)->second;
 }
 
@@ -188,15 +190,25 @@ Labels IRUtils::generate_labels(bool is_while) {
 
 size_t IRUtils::size_of() { return this->ir_vars.size(); }
 
-auto generate_ir(UPtrExpr &root) {
+IRGenerator generate_ir(UPtrExpr &root, C_type root_type) {
   std::unordered_map<IRVar, IRVar> symbol_table{};
 
   IRGenerator ir_gen{};
 
-  root->accept(ir_gen);
+  auto root_ir_var = root->accept(ir_gen);
 
-  // std::println("Irutils ir_vars size {}", ir_gen.utils.size_of());
+  if (root_type != C_type::C_unit) {
+    auto dst = ir_gen.utils.generate_var();
+    auto args = std::vector<IRVar>{root_ir_var};
+
+    if (root_type == C_type::C_int)
+      ir_gen.ins.emplace_back(Call{"print_int", args, dst});
+
+    if (root_type == C_type::C_bool)
+      ir_gen.ins.emplace_back(Call{"print_bool", args, dst});
+  }
 
   return ir_gen;
 }
+
 } // namespace compiler

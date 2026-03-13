@@ -13,8 +13,6 @@ using namespace std;
 
 namespace compiler {
 
-TypeChecker::TypeChecker(SymTab &st) : sym_tab(st) {}
-
 // TODO: Move expr methods elsewhere
 // ======>
 C_type Literal::accept(TypeChecker &tc) const { return tc.visit(*this); }
@@ -74,7 +72,8 @@ C_type TypeChecker::visit(const BinaryOp &e) {
 C_type TypeChecker::visit(const UnaryOp &e) {
   const auto ct = e.expr->accept(*this);
 
-  const auto typing = get_if<FnType>(this->sym_tab.lookup(e.op));
+  const auto typing = get_if<FnType>(this->sym_tab.lookup(
+      std::format("{}{}", e.op == "not" || e.op == "-" ? "unary_" : "", e.op)));
 
   if (typing) {
     if (ct == typing->at(0))
@@ -192,9 +191,7 @@ C_type TypeChecker::visit(const FunctionCall &e) {
 }
 
 C_type typecheck(UPtrExpr &&root) {
-  SymTab SymbolTable{};
-
-  TypeChecker tc{SymbolTable};
+  TypeChecker tc{};
 
   return root->accept(tc);
 }

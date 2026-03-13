@@ -17,9 +17,7 @@ struct Variable;
 struct While;
 
 struct TypeChecker {
-  SymTab &sym_tab;
-
-  explicit TypeChecker(SymTab &st);
+  SymTab sym_tab{};
 
   C_type visit(const Literal &e);
   C_type visit(const Identifier &e);

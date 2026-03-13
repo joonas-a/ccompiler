@@ -12,9 +12,9 @@ namespace compiler {
 
 auto make_asm(std::string_view input) {
   auto ast = parse(tokenize(input));
-  typecheck(std::move(ast));
+  auto root_type = typecheck(std::move(ast));
 
-  return generate_assembly(generate_ir(ast));
+  return generate_assembly(generate_ir(ast, root_type));
 }
 
 TEST_CASE("Assembly generator", "[assembly]") {
