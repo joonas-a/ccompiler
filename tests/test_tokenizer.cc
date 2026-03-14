@@ -23,50 +23,57 @@ TEST_CASE("Tokenizer tests", "[tokenizer]") {
   string input7 = "{{a}{b}}";
 
   vector<Token> output1{
-      Token{L, Kind::CONDITIONAL, "if"}, Token{L, Kind::INT_LITERAL, "3"},
-      Token{L, Kind::IDENTIFIER, "while"}, Token{L, Kind::CONDITIONAL, "else"},
+      Token{L, Kind::PUNCTUATOR, "{"},    Token{L, Kind::CONDITIONAL, "if"},
+      Token{L, Kind::INT_LITERAL, "3"},    Token{L, Kind::IDENTIFIER, "while"},
+      Token{L, Kind::CONDITIONAL, "else"}, Token{L, Kind::PUNCTUATOR, "}"},
       Token{L, Kind::END, "$SENTINEL"}};
 
   vector<Token> output2{
-      Token{L, Kind::INT_LITERAL, "1"}, Token{L, Kind::OPERATOR, "+"},
-      Token{L, Kind::INT_LITERAL, "2"}, Token{L, Kind::OPERATOR, "-"},
-      Token{L, Kind::OPERATOR, "/"},    Token{L, Kind::OPERATOR, "<"},
-      Token{L, Kind::OPERATOR, ">"},    Token{L, Kind::OPERATOR, "<="},
-      Token{L, Kind::OPERATOR, ">="},   Token{L, Kind::OPERATOR, "!="},
-      Token{L, Kind::OPERATOR, "=="},   Token{L, Kind::OPERATOR, "="},
-      Token{L, Kind::OPERATOR, "*"},    Token{L, Kind::OPERATOR, "and"},
-      Token{L, Kind::IDENTIFIER, "a"},  Token{L, Kind::OPERATOR, "or"},
-      Token{L, Kind::OPERATOR, "not"},  Token{L, Kind::INT_LITERAL, "2"},
+      Token{L, Kind::PUNCTUATOR, "{"}, Token{L, Kind::INT_LITERAL, "1"},
+      Token{L, Kind::OPERATOR, "+"},    Token{L, Kind::INT_LITERAL, "2"},
+      Token{L, Kind::OPERATOR, "-"},    Token{L, Kind::OPERATOR, "/"},
+      Token{L, Kind::OPERATOR, "<"},    Token{L, Kind::OPERATOR, ">"},
+      Token{L, Kind::OPERATOR, "<="},   Token{L, Kind::OPERATOR, ">="},
+      Token{L, Kind::OPERATOR, "!="},   Token{L, Kind::OPERATOR, "=="},
+      Token{L, Kind::OPERATOR, "="},    Token{L, Kind::OPERATOR, "*"},
+      Token{L, Kind::OPERATOR, "and"},  Token{L, Kind::IDENTIFIER, "a"},
+      Token{L, Kind::OPERATOR, "or"},   Token{L, Kind::OPERATOR, "not"},
+      Token{L, Kind::INT_LITERAL, "2"}, Token{L, Kind::PUNCTUATOR, "}"},
       Token{L, Kind::END, "$SENTINEL"}};
 
   vector<Token> output3{
-      Token{L, Kind::PUNCTUATOR, "("}, Token{L, Kind::PUNCTUATOR, ")"},
-      Token{L, Kind::PUNCTUATOR, ")"}, Token{L, Kind::PUNCTUATOR, ","},
-      Token{L, Kind::PUNCTUATOR, "{"}, Token{L, Kind::PUNCTUATOR, "{"},
-      Token{L, Kind::PUNCTUATOR, "}"}, Token{L, Kind::PUNCTUATOR, "}"},
-      Token{L, Kind::PUNCTUATOR, ","}, Token{L, Kind::PUNCTUATOR, ";"},
+      Token{L, Kind::PUNCTUATOR, "{"}, Token{L, Kind::PUNCTUATOR, "("},
+      Token{L, Kind::PUNCTUATOR, ")"},  Token{L, Kind::PUNCTUATOR, ")"},
+      Token{L, Kind::PUNCTUATOR, ","},  Token{L, Kind::PUNCTUATOR, "{"},
+      Token{L, Kind::PUNCTUATOR, "{"},  Token{L, Kind::PUNCTUATOR, "}"},
+      Token{L, Kind::PUNCTUATOR, "}"},  Token{L, Kind::PUNCTUATOR, ","},
+      Token{L, Kind::PUNCTUATOR, ";"},  Token{L, Kind::PUNCTUATOR, "}"},
       Token{L, Kind::END, "$SENTINEL"}};
 
   vector<Token> output4{
-      Token{L, Kind::IDENTIFIER, "s"}, Token{L, Kind::INT_LITERAL, "2"},
-      Token{L, Kind::INT_LITERAL, "3"}, Token{L, Kind::END, "$SENTINEL"}};
+      Token{L, Kind::PUNCTUATOR, "{"}, Token{L, Kind::IDENTIFIER, "s"},
+      Token{L, Kind::INT_LITERAL, "2"}, Token{L, Kind::INT_LITERAL, "3"},
+      Token{L, Kind::PUNCTUATOR, "}"}, Token{L, Kind::END, "$SENTINEL"}};
 
   vector<Token> output5{
-      Token{L, Kind::PUNCTUATOR, "("}, Token{L, Kind::IDENTIFIER, "a"},
-      Token{L, Kind::OPERATOR, "+"},   Token{L, Kind::IDENTIFIER, "b"},
-      Token{L, Kind::PUNCTUATOR, ")"}, Token{L, Kind::OPERATOR, "*"},
-      Token{L, Kind::IDENTIFIER, "c"}, Token{L, Kind::END, "$SENTINEL"}};
+      Token{L, Kind::PUNCTUATOR, "{"}, Token{L, Kind::PUNCTUATOR, "("},
+      Token{L, Kind::IDENTIFIER, "a"},  Token{L, Kind::OPERATOR, "+"},
+      Token{L, Kind::IDENTIFIER, "b"},  Token{L, Kind::PUNCTUATOR, ")"},
+      Token{L, Kind::OPERATOR, "*"},    Token{L, Kind::IDENTIFIER, "c"},
+      Token{L, Kind::PUNCTUATOR, "}"}, Token{L, Kind::END, "$SENTINEL"}};
 
   vector<Token> output6{
-      Token{L, Kind::IDENTIFIER, "a"}, Token{L, Kind::IDENTIFIER, "b"},
-      Token{L, Kind::OPERATOR, "+"}, Token{L, Kind::IDENTIFIER, "c"},
+      Token{L, Kind::PUNCTUATOR, "{"}, Token{L, Kind::IDENTIFIER, "a"},
+      Token{L, Kind::IDENTIFIER, "b"},  Token{L, Kind::OPERATOR, "+"},
+      Token{L, Kind::IDENTIFIER, "c"},  Token{L, Kind::PUNCTUATOR, "}"},
       Token{L, Kind::END, "$SENTINEL"}};
 
   vector<Token> output7{
       Token{L, Kind::PUNCTUATOR, "{"}, Token{L, Kind::PUNCTUATOR, "{"},
-      Token{L, Kind::IDENTIFIER, "a"}, Token{L, Kind::PUNCTUATOR, "}"},
-      Token{L, Kind::PUNCTUATOR, "{"}, Token{L, Kind::IDENTIFIER, "b"},
-      Token{L, Kind::PUNCTUATOR, "}"}, Token{L, Kind::PUNCTUATOR, "}"},
+      Token{L, Kind::PUNCTUATOR, "{"},  Token{L, Kind::IDENTIFIER, "a"},
+      Token{L, Kind::PUNCTUATOR, "}"},  Token{L, Kind::PUNCTUATOR, "{"},
+      Token{L, Kind::IDENTIFIER, "b"},  Token{L, Kind::PUNCTUATOR, "}"},
+      Token{L, Kind::PUNCTUATOR, "}"},  Token{L, Kind::PUNCTUATOR, "}"},
       Token{L, Kind::END, "$SENTINEL"}};
 
   SECTION("Basics") { REQUIRE(compiler::tokenize(input1) == output1); }

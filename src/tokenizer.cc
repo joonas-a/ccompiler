@@ -41,7 +41,8 @@ static constexpr Kind get_type(std::string_view text) {
 namespace compiler {
 
 std::vector<Token> tokenize(const std::string_view input) {
-  std::vector<Token> all_tokens;
+  std::vector<Token> all_tokens{};
+  all_tokens.emplace_back(Token{{0, 0}, Kind::PUNCTUATOR, "{"});
 
   constexpr auto delim{std::string_view{"\n"}};
   const auto tokenizer_regex =
@@ -66,6 +67,7 @@ std::vector<Token> tokenize(const std::string_view input) {
     ++line_num;
   }
 
+  all_tokens.emplace_back(Token{{line_num, 1}, Kind::PUNCTUATOR, "}"});
   all_tokens.emplace_back(Token{{line_num, 1}, Kind::END, "$SENTINEL"});
   return all_tokens;
 }

@@ -3,6 +3,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
+#include <print>
 #include <string>
 #include <utility>
 #include <variant>
@@ -149,30 +150,27 @@ UPtrExpr parse(const vector<Token> &tokens) {
     return peek().text == "var" ? parse_variable_decl() : parse_expr();
   };
 
-  auto parse_block = [&](bool is_explicit = true) -> UPtrExpr {
-    if (is_explicit) {
-      consume("{");
+  auto parse_block = [&]() -> UPtrExpr {
+    consume("{");
 
-      // Case empty block
-      if (peek().text == "}") {
-        consume("}");
-        return make_unique<Block>(vector<UPtrExpr>());
-      }
+    // Case empty block
+    if (peek().text == "}") {
+      consume("}");
+      return make_unique<Block>(vector<UPtrExpr>());
     }
 
     auto top_level_exprs = std::vector<UPtrExpr>{};
     top_level_exprs.emplace_back(parse_top_level());
 
     // If expr in a block ends in ;
-    // OR expr was a block that did not end in ; but another expression follows
-    // There will be more expressions under the current scope
+    // OR expr was a block that did not end in ;
+    // There will be more expressions in current scope
     while (peek().text == ";" || peek(-1).text == "}") {
 
       if (peek().text == ";") {
         // Case 1: Consume and parse the next expression
+        // unless the next token is scope end or EOF -> return unit
         consume(";");
-        // unless the next token is the scope ending or EOF in which case return
-        // unit
         if (peek().text == "}" || peek().type == Kind::END) {
           top_level_exprs.emplace_back(make_unique<Literal>(std::monostate()));
         } else {
@@ -183,19 +181,11 @@ UPtrExpr parse(const vector<Token> &tokens) {
         // Unless text token is } or EOF there will be more to parse
         top_level_exprs.emplace_back(parse_top_level());
       } else {
-        // Case 3: Next token is scope ending, or EOF
         break;
       }
     }
 
-    if (is_explicit) {
-      consume("}");
-      // Exception: Top most expression is ending in a ;
-      if (peek().text == ";" && peek(1).type == Kind::END) {
-        consume(nullopt);
-        top_level_exprs.emplace_back(make_unique<Literal>(std::monostate()));
-      }
-    }
+    consume("}");
 
     return make_unique<Block>(std::move(top_level_exprs));
   };
@@ -261,7 +251,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
   };
 
   // Entrypoint
-  auto result = parse_block(peek().text == "{");
+  auto result = parse_block();
   if (peek().type != Kind::END) {
     throw SyntaxError("Parser: trailing junk in input");
   }
