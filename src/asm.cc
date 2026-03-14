@@ -85,7 +85,7 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
             emit(format(".L{}:", in.text));
 
           } else if constexpr (std::is_same_v<T, LoadIntConst>) {
-            // TODO: make sure bound checking works
+            // TODO: always goes to the else clause, unsigned long does not convert to int as expected
             emit("# LoadIntConst");
             if (std::numeric_limits<int>::min() <= in.value &&
                 in.value < std::numeric_limits<int>::max()) {

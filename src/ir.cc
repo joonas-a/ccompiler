@@ -14,7 +14,6 @@ struct SymTab;
 // TODOS:
 // Symbol table incl. all functions etc
 // Scopes
-// keywords and, or, ...
 
 namespace compiler {
 
@@ -80,6 +79,12 @@ IRVar IRGenerator::visit(const BinaryOp &e) {
 
     this->ins.emplace_back(end_label);
     return dst;
+  }
+
+  if (e.op == "=") {
+    const auto rhs_t = e.rhs->accept(*this);
+    this->ins.emplace_back(Copy{rhs_t, lhs_t});
+    return lhs_t;
   }
 
   const auto rhs_t = e.rhs->accept(*this);

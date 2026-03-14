@@ -68,11 +68,6 @@ const Scope kGlobals{
          C_type::C_bool,
          C_type::C_bool,
      }},
-    {"=",
-     FnType{
-         C_type::C_any,
-         C_type::C_any,
-     }},
     {"unary_-",
      FnType{
          C_type::C_int,

@@ -52,21 +52,23 @@ C_type TypeChecker::visit(const BinaryOp &e) {
   const auto lhs_t = e.lhs->accept(*this);
   const auto rhs_t = e.rhs->accept(*this);
 
-  const auto typing = get_if<FnType>(this->sym_tab.lookup(e.op));
+  const auto sym_tab_typing = get_if<FnType>(this->sym_tab.lookup(e.op));
 
-  if (typing) {
-    if (lhs_t == typing->at(0) && rhs_t == typing->at(1))
-      return typing->at(2);
+  if (sym_tab_typing) {
+    if (lhs_t == sym_tab_typing->at(0) && rhs_t == sym_tab_typing->at(1))
+      return sym_tab_typing->at(2);
 
-    throw runtime_error("Invalid args: BinaryOp");
+    throw runtime_error("Typecheck: Invalid args: BinaryOp");
   }
 
   if ((e.op == "==" || e.op == "!=") && lhs_t == rhs_t)
     return C_type::C_bool;
+  else if ((e.op == "=") && lhs_t == rhs_t)
+    return lhs_t;
   else
     throw runtime_error("Typecheck: mismatched types on equality check");
 
-  throw runtime_error("Typecheck: Unknown BinaryOp");
+  throw runtime_error("Typecheck: Unimplemented BinaryOp");
 }
 
 C_type TypeChecker::visit(const UnaryOp &e) {
@@ -137,9 +139,12 @@ C_type TypeChecker::visit(const Variable &e) {
   if (this->sym_tab.local_key_exists(name))
     throw runtime_error("Attempted to re-declare a local variable");
 
-  auto tmp = e.value->accept(*this);
+  auto var_type = e.value->accept(*this);
 
-  this->sym_tab.add(name, e.value->accept(*this));
+  std::println("# Typecheck: var {}, type {}", name,
+               static_cast<int>(var_type));
+
+  this->sym_tab.add(name, var_type);
 
   for (auto x : this->sym_tab.stack.back()) {
     auto tmp = get_if<C_type>(&x.second);
