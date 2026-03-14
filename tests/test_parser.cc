@@ -1,5 +1,6 @@
 #ifndef CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_MAIN
+#include "expression.h"
 #include <string_view>
 #endif
 
@@ -209,7 +210,7 @@ TEST_CASE("Parser valid input", "[parser]") {
   }
 
   SECTION("Function calls") {
-    auto args = std::vector<std::unique_ptr<Expression>>{};
+    auto args = std::vector<UPtrExpr>{};
 
     args.emplace_back(std::make_unique<Literal>(1UL));
     REQUIRE(*parse("print_int(1)") ==
@@ -231,10 +232,10 @@ TEST_CASE("Parser valid input", "[parser]") {
   }
 
   SECTION("Nested function call: print_int(read_int())") {
-    auto args = std::vector<std::unique_ptr<Expression>>{};
+    auto args = std::vector<UPtrExpr>{};
 
     {
-      auto innerArgs = std::vector<std::unique_ptr<Expression>>{};
+      auto innerArgs = std::vector<UPtrExpr>{};
       auto innerCall = std::make_unique<FunctionCall>(
           std::make_unique<Identifier>("read_int"), std::move(innerArgs));
 
@@ -247,14 +248,19 @@ TEST_CASE("Parser valid input", "[parser]") {
   }
 
   SECTION("Blocks") {
-    auto exprs = std::vector<std::unique_ptr<Expression>>{};
+    auto exprs = std::vector<UPtrExpr>{};
     exprs.emplace_back(make_unique<Identifier>("a"));
-    auto block = make_unique<Block>(std::move(exprs));
-
-    REQUIRE(*parse("{a}") == *block);
+    REQUIRE(*parse("{a}") == *make_unique<Block>(std::move(exprs)));
 
     exprs.clear();
-    auto inner_exprs = std::vector<std::unique_ptr<Expression>>{};
+
+    exprs.emplace_back(make_unique<Variable>("a", make_unique<Literal>(1UL)));
+    exprs.emplace_back(make_unique<Literal>(std::monostate()));
+    REQUIRE(*parse("var a = 1;") == *make_unique<Block>(std::move(exprs)));
+
+    exprs.clear();
+
+    auto inner_exprs = std::vector<UPtrExpr>{};
     inner_exprs.emplace_back(std::make_unique<Identifier>("a"));
     auto inner_block = std::make_unique<Block>(std::move(inner_exprs));
     exprs.emplace_back(std::move(inner_block));
@@ -300,6 +306,14 @@ TEST_CASE("Parser valid input", "[parser]") {
             *make_unique<Variable>(
                 "x", make_unique<BinaryOp>(make_unique<Literal>(1UL), "+",
                                            make_unique<Literal>(2UL))));
+
+    auto exprs = vector<UPtrExpr>{};
+    exprs.emplace_back(make_unique<Variable>("a", make_unique<Literal>(true)));
+    exprs.emplace_back(make_unique<Variable>("b", make_unique<Literal>(false)));
+    exprs.emplace_back(make_unique<Identifier>("b"));
+
+    REQUIRE(*parse("var a = true; var b = false; b") ==
+            *make_unique<Block>(std::move(exprs)));
   }
 
   SECTION("While loops") {

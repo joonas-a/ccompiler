@@ -29,19 +29,13 @@ UPtrExpr parse(const vector<Token> &tokens) {
 
   auto peek = [&](ssize_t offset = 0) -> const Token & {
     if (tokens.empty())
-      throw SyntaxError("Input cannot be empty");
+      throw SyntaxError("Parser: input was empty");
 
     if (pos + offset < static_cast<ssize_t>(tokens.size())) {
-      // println("Peeking: {}", tokens.at(pos + offset).text);
       return tokens.at(pos + offset);
     }
 
-    if (pos + offset == static_cast<ssize_t>(tokens.size())) {
-      static Token end{tokens.back().loc, Kind::END, ""};
-      return end;
-    }
-
-    throw runtime_error("Out of bounds!");
+    throw runtime_error("Parser: tried to peek out of bounds");
   };
 
   auto consume = [&](optional<variant<string, vector<string_view>>> expected) {
@@ -50,12 +44,12 @@ UPtrExpr parse(const vector<Token> &tokens) {
     if (expected.has_value()) {
       if (expected->index() == 0) {
         if (get<0>(*expected) != token.text) {
-          throw SyntaxError("Consume: expected " + get<0>(*expected) +
+          throw SyntaxError("Parser: consume expected " + get<0>(*expected) +
                             " but found: " + token.as_string());
         }
       } else {
         if (!std::ranges::contains(get<1>(*expected), token.text))
-          throw SyntaxError("Consume: Unexpected token: " + token.text);
+          throw SyntaxError("Parser: consumed unexpected token: " + token.text);
       }
     }
 
@@ -63,26 +57,17 @@ UPtrExpr parse(const vector<Token> &tokens) {
     return token;
   };
 
-  auto verify_syntax = [&]() {
-    const Kind next = peek().type;
-    if (peek(-1).text == "}" || peek().text == "do")
-      return;
-    if (next == Kind::INT_LITERAL || next == Kind::IDENTIFIER) {
-      throw SyntaxError("Unexpected tokens; " + peek().text + peek(1).text);
-    }
-  };
-
   auto parse_int_literal = [&]() {
     if ((pos > 0 && peek(-1).type == Kind::INT_LITERAL) ||
         peek(1).type == Kind::INT_LITERAL) {
-      throw SyntaxError("Two int literals in a row");
+      throw SyntaxError("Parser: Received two int literals in a row");
     }
 
     auto token = consume(nullopt);
     return make_unique<Literal>(stoul(token.text));
   };
 
-  auto parse_function = [&](unique_ptr<Identifier> name) {
+  auto parse_function_call = [&](unique_ptr<Identifier> name) {
     consume("(");
     vector<UPtrExpr> args{};
 
@@ -108,7 +93,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
     auto token = consume(nullopt);
 
     if (peek().text == "(") {
-      return parse_function(make_unique<Identifier>(token.text));
+      return parse_function_call(make_unique<Identifier>(token.text));
     }
 
     if (token.text == "true" || token.text == "false") {
@@ -148,62 +133,71 @@ UPtrExpr parse(const vector<Token> &tokens) {
     return make_unique<UnaryOp>(op, parse_factor());
   };
 
-  auto parse_variable = [&]() {
+  auto parse_variable_decl = [&]() {
     consume("var");
     auto token = consume(nullopt);
     if (token.type != Kind::IDENTIFIER) {
-      throw SyntaxError("Expected identifier for variable name, found: " +
+      throw SyntaxError("Parser: Variable name must be an identifier, found: " +
                         token.as_string());
     }
     consume("=");
     return make_unique<Variable>(token.text, parse_expr());
   };
 
-  auto parse_block_content = [&](bool explicit_block) -> UPtrExpr {
-    auto expr = peek().text == "var" ? parse_variable() : parse_expr();
-
-    if (explicit_block || peek().text == ";") {
-      vector<UPtrExpr> exprs;
-      exprs.push_back(std::move(expr));
-
-      while (true) {
-        if (peek().text == ";") {
-          consume(nullopt);
-          if (peek().type == Kind::END || peek().text == "}") {
-            exprs.emplace_back(make_unique<Literal>(monostate()));
-          } else {
-            exprs.emplace_back(parse_expr());
-          }
-          continue;
-        }
-
-        if (peek().text == "{") {
-          auto expr = peek().text == "var" ? parse_variable() : parse_expr();
-          exprs.push_back(std::move(expr));
-          continue;
-        }
-
-        break;
-      }
-
-      // cout << *exprs[0] << "parse_block_content " << endl;
-      return make_unique<Block>(std::move(exprs));
-    }
-    return expr;
+  auto parse_top_level = [&]() -> UPtrExpr {
+    // Only allow variable declarations at the top level
+    return peek().text == "var" ? parse_variable_decl() : parse_expr();
   };
 
-  auto parse_new_block = [&]() -> UPtrExpr {
-    consume("{");
+  auto parse_block = [&](bool is_explicit = true) -> UPtrExpr {
+    if (is_explicit) {
+      consume("{");
 
-    if (peek(-1).text == "{" && peek().text == "}") {
-      // println("Block was empty!");
-      return make_unique<Block>(vector<UPtrExpr>());
+      // Case empty block
+      if (peek().text == "}") {
+        consume("}");
+        return make_unique<Block>(vector<UPtrExpr>());
+      }
     }
 
-    auto block = parse_block_content(true);
-    // cout << *block << endl;
-    consume("}");
-    return block;
+    auto top_level_exprs = std::vector<UPtrExpr>{};
+    top_level_exprs.emplace_back(parse_top_level());
+
+    // If expr in a block ends in ;
+    // OR expr was a block that did not end in ; but another expression follows
+    // There will be more expressions under the current scope
+    while (peek().text == ";" || peek(-1).text == "}") {
+
+      if (peek().text == ";") {
+        // Case 1: Consume and parse the next expression
+        consume(";");
+        // unless the next token is the scope ending or EOF in which case return
+        // unit
+        if (peek().text == "}" || peek().type == Kind::END) {
+          top_level_exprs.emplace_back(make_unique<Literal>(std::monostate()));
+        } else {
+          top_level_exprs.emplace_back(parse_top_level());
+        }
+      } else if (peek().text != "}" && peek().type != Kind::END) {
+        // Case 2: previous token was a scope end
+        // Unless text token is } or EOF there will be more to parse
+        top_level_exprs.emplace_back(parse_top_level());
+      } else {
+        // Case 3: Next token is scope ending, or EOF
+        break;
+      }
+    }
+
+    if (is_explicit) {
+      consume("}");
+      // Exception: Top most expression is ending in a ;
+      if (peek().text == ";" && peek(1).type == Kind::END) {
+        consume(nullopt);
+        top_level_exprs.emplace_back(make_unique<Literal>(std::monostate()));
+      }
+    }
+
+    return make_unique<Block>(std::move(top_level_exprs));
   };
 
   auto parse_loop = [&]() {
@@ -219,7 +213,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
       return parse_parenthesized();
 
     if (token.text == "{")
-      return parse_new_block();
+      return parse_block();
 
     if (token.text == "while")
       return parse_loop();
@@ -236,8 +230,9 @@ UPtrExpr parse(const vector<Token> &tokens) {
     if (token.type == Kind::CONDITIONAL)
       return parse_conditional();
 
-    throw SyntaxError("Expected to find a suitable term, instead got: " +
-                      token.text);
+    throw SyntaxError(std::format(
+        "Parser: Expected to find a suitable term, instead got: {} at pos {}",
+        token.text, pos));
   };
 
   function<UPtrExpr(size_t)> parse_prec_level = [&](size_t level) {
@@ -262,10 +257,15 @@ UPtrExpr parse(const vector<Token> &tokens) {
       left = make_unique<BinaryOp>(std::move(left), token.text, parse_expr());
     }
 
-    verify_syntax();
     return left;
   };
 
-  return parse_block_content(false);
+  // Entrypoint
+  auto result = parse_block(peek().text == "{");
+  if (peek().type != Kind::END) {
+    throw SyntaxError("Parser: trailing junk in input");
+  }
+
+  return result;
 }
 } // namespace compiler
