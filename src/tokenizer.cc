@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <cctype>
-#include <print>
+#include <cstddef>
 #include <ranges>
 #include <regex>
 #include <string_view>
@@ -66,6 +66,7 @@ std::vector<Token> tokenize(const std::string_view input) {
     ++line_num;
   }
 
+  all_tokens.emplace_back(Token{{line_num, 1}, Kind::END, "$SENTINEL"});
   return all_tokens;
 }
 
