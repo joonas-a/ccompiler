@@ -13,8 +13,6 @@ using std::format;
 
 void Locals::init_stack(IRVarVec &ir_vars) {
   for (const auto var : ir_vars) {
-    if (var == "unit")
-      continue;
     ++this->stack_used;
     this->ir_var_map.emplace(var, format("-{}(%rbp)", 8 * this->stack_used));
   }
@@ -24,7 +22,7 @@ std::string Locals::get_addr_for(IRVar var) {
   if (auto it = this->ir_var_map.find(var); it != this->ir_var_map.end())
     return it->second;
 
-  std::println("\n!!! Addr not found for {}", var);
+  std::println("\n!!! Addr not found for -> {} <-", var);
   for (auto &x : ir_var_map)
     std::println("{} -> {}", x.first, x.second);
 
@@ -57,11 +55,6 @@ void AssemblyGenerator::end_boiler() {
   this->emit("popq %rbp");
   this->emit("ret");
   this->emit("");
-
-  // this->emit("scan_format:");
-  // this->emit(".asciz \"%ld\"");
-  // this->emit("print_format:");
-  // this->emit(".asciz \"%ld\"\n");
 }
 
 void AssemblyGenerator::print_asm() {
@@ -85,7 +78,8 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
             emit(format(".L{}:", in.text));
 
           } else if constexpr (std::is_same_v<T, LoadIntConst>) {
-            // TODO: always goes to the else clause, unsigned long does not convert to int as expected
+            // TODO: always goes to the else clause, unsigned long does not
+            // convert to int as expected
             emit("# LoadIntConst");
             if (std::numeric_limits<int>::min() <= in.value &&
                 in.value < std::numeric_limits<int>::max()) {
@@ -211,7 +205,7 @@ auto generate_assembly(IRGenerator &&ir_gen) {
 
   AssemblyGenerator asm_gen{locals};
 
-  std::println("# IRVars = {}", ir_gen.utils.ir_vars.size());
+  std::println("# AsmGen: IRVars = {}", ir_gen.utils.ir_vars.size());
 
   asm_gen.start_boiler();
 

@@ -65,9 +65,11 @@ using Labels = std::tuple<Label, Label, Label>;
 struct IRUtils {
   size_t var_count{};
   size_t label_count{};
+  bool unit_dispatched{ false };
 
   std::vector<IRVar> ir_vars{};
   IRVar generate_var();
+  IRVar generate_unit();
   Labels generate_labels(std::string_view keyword);
 };
 

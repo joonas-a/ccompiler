@@ -37,7 +37,7 @@ IRVar IRGenerator::visit(const Literal &e) {
         using T = std::decay_t<decltype(arg)>;
 
         if constexpr (std::is_same_v<T, std::monostate>) {
-          return IRVar{"unit"};
+          return this->utils.generate_unit();
         }
 
         const auto var = this->utils.generate_var();
@@ -116,7 +116,7 @@ IRVar IRGenerator::visit(const IfThenStatement &e) {
 
   this->ins.emplace_back(end_label);
 
-  return "unit";
+  return this->utils.generate_unit();
 }
 
 IRVar IRGenerator::visit(const IfThenElseStatement &e) {
@@ -146,7 +146,7 @@ IRVar IRGenerator::visit(const IfThenElseStatement &e) {
 
 IRVar IRGenerator::visit(const Block &e) {
   if (e.exprs.empty())
-    return "unit";
+    return this->utils.generate_unit();
 
   for (size_t i = 0; i < e.exprs.size() - 1; ++i) {
     e.exprs[i]->accept(*this);
@@ -170,7 +170,7 @@ IRVar IRGenerator::visit(const While &e) {
 
   this->ins.emplace_back(end_label);
 
-  return "unit";
+  return this->utils.generate_unit();
 }
 
 // TODO: make scopes work
@@ -182,7 +182,7 @@ IRVar IRGenerator::visit(const Variable &e) {
   this->sym_tab.emplace(e.name, lhs);
   this->ins.emplace_back(Copy{rhs, lhs});
 
-  return "unit";
+  return this->utils.generate_unit();
 }
 
 IRVar IRGenerator::visit(const Identifier &e) {
@@ -190,7 +190,6 @@ IRVar IRGenerator::visit(const Identifier &e) {
 }
 
 IRVar IRGenerator::visit(const FunctionCall &e) {
-  // const auto fn_name = this->sym_tab.find(e.name->value)->second;
   const auto fn_name = e.name->value;
 
   auto args = std::vector<IRVar>{};
@@ -214,6 +213,15 @@ IRVar IRUtils::generate_var() {
   return new_var;
 }
 
+IRVar IRUtils::generate_unit() {
+  static constexpr IRVar unit = "unit";
+  if (!this->unit_dispatched) {
+    this->ir_vars.push_back(unit);
+    this->unit_dispatched = true;
+  }
+  return unit;
+}
+
 Labels IRUtils::generate_labels(std::string_view keyword) {
   ++label_count;
   return std::make_tuple(std::format("main_{}_right{}", keyword, label_count),
@@ -222,18 +230,15 @@ Labels IRUtils::generate_labels(std::string_view keyword) {
 }
 
 IRGenerator generate_ir(UPtrExpr &root, C_type root_type) {
-  std::unordered_map<IRVar, IRVar> symbol_table{};
+  // std::unordered_map<IRVar, IRVar> symbol_table{};
 
   IRGenerator ir_gen{};
 
   auto root_ir_var = root->accept(ir_gen);
 
   if (root_type != C_type::C_unit) {
-    std::println("# Root result either int or bool");
     auto dst = ir_gen.utils.generate_var();
     auto args = std::vector<IRVar>{root_ir_var};
-
-    println("# Args[0] = {}", args[0]);
 
     if (root_type == C_type::C_int)
       ir_gen.ins.emplace_back(Call{"print_int", args, dst});
