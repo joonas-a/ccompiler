@@ -26,7 +26,14 @@ TEST_CASE("Typechecker", "[typechecker]") {
     REQUIRE(check("{ { var b = 5; b + 2 } }") == C_type::C_int);
     REQUIRE(check("if 1<2 then 1") == C_type::C_unit);
     REQUIRE(check("1 < 2") == C_type::C_bool);
+    REQUIRE(check("1 == 2") == C_type::C_bool);
+    REQUIRE(check("true == true") == C_type::C_bool);
+    REQUIRE(check("true == false") == C_type::C_bool);
   }
 
-  SECTION("Should not pass") { REQUIRE_THROWS(check("{var a = 10}; a + 10")); }
+  SECTION("Should not pass") {
+    REQUIRE_THROWS(check("{var a = 10}; a + 10"));
+    REQUIRE_THROWS(check("true == 1"));
+    REQUIRE_THROWS(check("1 == false"));
+  }
 }

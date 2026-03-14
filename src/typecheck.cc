@@ -61,10 +61,12 @@ C_type TypeChecker::visit(const BinaryOp &e) {
     throw runtime_error("Invalid args: BinaryOp");
   }
 
-  if ((e.op == "==" || e.op == "!=") && lhs_t != rhs_t)
-    throw runtime_error("Non matching arg type with equality check");
+  if ((e.op == "==" || e.op == "!=") && lhs_t == rhs_t)
+    return C_type::C_bool;
+  else
+    throw runtime_error("Typecheck: mismatched types on equality check");
 
-  throw runtime_error("Unknown BinaryOp");
+  throw runtime_error("Typecheck: Unknown BinaryOp");
 }
 
 C_type TypeChecker::visit(const UnaryOp &e) {

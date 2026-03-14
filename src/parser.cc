@@ -68,7 +68,6 @@ UPtrExpr parse(const vector<Token> &tokens) {
     if (peek(-1).text == "}" || peek().text == "do")
       return;
     if (next == Kind::INT_LITERAL || next == Kind::IDENTIFIER) {
-      // cout << peek(-1).text << peek().text << peek(1).text << endl;
       throw SyntaxError("Unexpected tokens; " + peek().text + peek(1).text);
     }
   };
@@ -246,7 +245,6 @@ UPtrExpr parse(const vector<Token> &tokens) {
       return parse_factor();
 
     auto left = parse_prec_level(level + 1);
-
     while (std::ranges::contains(la_binary_ops[level], peek().text)) {
       const auto token = consume(nullopt);
       left = make_unique<BinaryOp>(std::move(left), token.text,
