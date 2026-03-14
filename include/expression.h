@@ -28,9 +28,9 @@ struct Expression {
 using UPtrExpr = std::unique_ptr<Expression>;
 
 struct Literal : Expression {
-  std::variant<long, bool, std::monostate> value;
+  std::variant<unsigned long, bool, std::monostate> value;
 
-  explicit Literal(long i) : value(i) {};
+  explicit Literal(unsigned long i) : value(i) {};
   explicit Literal(bool x) : value(x) {};
   explicit Literal(std::monostate u) : value(u) {};
 

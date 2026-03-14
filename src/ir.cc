@@ -43,7 +43,7 @@ IRVar IRGenerator::visit(const Literal &e) {
 
         const auto var = this->utils.generate_var();
 
-        if constexpr (std::is_same_v<T, long>) {
+        if constexpr (std::is_same_v<T, unsigned long>) {
           this->ins.emplace_back(LoadIntConst{arg, var});
           return var;
         }

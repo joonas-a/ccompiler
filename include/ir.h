@@ -33,7 +33,7 @@ struct LoadBoolConst {
 };
 
 struct LoadIntConst {
-  long value;
+  unsigned long value;
   IRVar dst;
 };
 

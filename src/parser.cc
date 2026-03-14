@@ -79,7 +79,7 @@ UPtrExpr parse(const vector<Token> &tokens) {
     }
 
     auto token = consume(nullopt);
-    return make_unique<Literal>(stol(token.text));
+    return make_unique<Literal>(stoul(token.text));
   };
 
   auto parse_function = [&](unique_ptr<Identifier> name) {

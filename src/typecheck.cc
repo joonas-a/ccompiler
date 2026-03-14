@@ -36,7 +36,7 @@ C_type TypeChecker::visit(const Literal &e) {
   return std::visit(
       [](const auto &arg) {
         using T = decay_t<decltype(arg)>;
-        if constexpr (is_same_v<T, long>)
+        if constexpr (is_same_v<T, unsigned long>)
           return C_type::C_int;
         else if constexpr (is_same_v<T, bool>)
           return C_type::C_bool;
