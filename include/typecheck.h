@@ -9,17 +9,54 @@
 
 #include "symtab.h"
 
-struct C_int {};
-struct C_bool {};
-struct C_unit {};
+struct C_int {
+  friend bool operator==(const C_int &a, const C_int &b) = default;
+};
+struct C_bool {
+  friend bool operator==(const C_bool &a, const C_bool &b) = default;
+};
+struct C_unit {
+  friend bool operator==(const C_unit &a, const C_unit &b) = default;
+};
+
 struct C_fn;
 
 using C_type = std::variant<C_int, C_bool, C_unit, std::shared_ptr<C_fn>>;
 
+bool equals(const C_type &a, const C_type &b);
+
 struct C_fn {
   std::vector<C_type> args;
   C_type return_type;
+
+  friend bool operator==(const C_fn &a, const C_fn &b) {
+    if (a.args.size() != b.args.size())
+      return false;
+    for (size_t i = 0; i < a.args.size(); ++i) {
+      if (!equals(a.args[i], b.args[i]))
+        return false;
+    }
+    return true;
+  }
 };
+
+inline bool operator==(const C_type a, const C_type b) { return equals(a, b); }
+
+inline bool equals(const C_type &a, const C_type &b) {
+  if (a.index() != b.index())
+    return false;
+
+  return std::visit(
+      [&](const auto &av) -> bool {
+        using T = std::decay_t<decltype(av)>;
+        if constexpr (std::is_same_v<T, std::shared_ptr<C_fn>>) {
+          return *av == *std::get<std::shared_ptr<C_fn>>(b);
+        } else {
+          return av == std::get<T>(b);
+        }
+      },
+      a);
+}
 
 // using SymbolType = std::variant<C_Primitive, FnType>;
 using TS_Scope = std::unordered_map<std::string, C_type>;

@@ -138,6 +138,11 @@ C_type TypeChecker::visit(const Variable &e) {
 
   auto var_type = e.value->accept(*this);
 
+  if (e.typehint.has_value()) {
+    if (var_type != e.typehint.value())
+      throw runtime_error("Typecheck: actual types differ from provided hints");
+  }
+
   this->sym_tab.add(e.name, var_type);
 
   return C_unit{};

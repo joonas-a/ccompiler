@@ -37,7 +37,11 @@ TEST_CASE("Typechecker", "[typechecker]") {
     REQUIRE_THROWS(check("{var a = 10}; a + 10"));
     REQUIRE_THROWS(check("true == 1"));
     REQUIRE_THROWS(check("1 == false"));
+    REQUIRE_THROWS(check("var a: Bool  = 1;"));
+    REQUIRE_THROWS(check("var a: Int = print_int;"));
+    REQUIRE_THROWS(check("var x: (true) => Unit = print_int; x(4)"));
   }
+
   SECTION("Typehints") {
     REQUIRE_NOTHROW(check("var x: Int = 3; x + 1"));
     REQUIRE_NOTHROW(check("var x: Bool = 1 < 2; x"));
