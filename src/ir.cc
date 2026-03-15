@@ -1,6 +1,7 @@
 #include <print>
 #include <tuple>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
 #include "expression.h"
@@ -234,19 +235,20 @@ Labels IRUtils::generate_labels(std::string_view keyword) {
                          std::format("main_{}_end{}", keyword, label_count));
 }
 
+// TODO: add types to ast nodes
 IRGenerator generate_ir(UPtrExpr &root, C_type root_type) {
   IRGenerator ir_gen{};
 
   auto root_ir_var = root->accept(ir_gen);
 
-  if (root_type != C_type::C_unit) {
+  if (!std::holds_alternative<C_unit>(root_type)) {
     auto dst = ir_gen.utils.generate_var();
     auto args = std::vector<IRVar>{root_ir_var};
 
-    if (root_type == C_type::C_int)
+    if (std::holds_alternative<C_int>(root_type))
       ir_gen.ins.emplace_back(Call{"print_int", args, dst});
 
-    if (root_type == C_type::C_bool)
+    if (std::holds_alternative<C_bool>(root_type))
       ir_gen.ins.emplace_back(Call{"print_bool", args, dst});
   }
 

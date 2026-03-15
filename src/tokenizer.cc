@@ -8,6 +8,8 @@
 
 #include "datatypes.h"
 
+namespace compiler {
+
 constexpr std::array<std::string_view, 15> kOperators = {
     "+",  "-", "*", "/", "=",   "==", "!=", "<=",
     ">=", "<", ">", "%", "and", "or", "not"};
@@ -17,7 +19,7 @@ constexpr std::array<std::string_view, 2> kComments = {"//", "#"};
 constexpr std::array<std::string_view, 3> kConditionals = {"if", "then",
                                                            "else"};
 
-static inline bool is_numeric(const std::string_view text) {
+constexpr static inline bool is_numeric(const std::string_view text) {
   return std::ranges::all_of(text, [](char x) { return std::isdigit(x); });
 }
 
@@ -37,8 +39,6 @@ static constexpr Kind get_type(std::string_view text) {
 
   return Kind::IDENTIFIER;
 }
-
-namespace compiler {
 
 std::vector<Token> tokenize(const std::string_view input) {
   std::vector<Token> all_tokens{};
@@ -67,7 +67,7 @@ std::vector<Token> tokenize(const std::string_view input) {
     ++line_num;
   }
 
-  all_tokens.emplace_back(Token{{line_num, 1}, Kind::PUNCTUATOR, "}"});
+  all_tokens.emplace_back(Token{{line_num, 0}, Kind::PUNCTUATOR, "}"});
   all_tokens.emplace_back(Token{{line_num, 1}, Kind::END, "$SENTINEL"});
   return all_tokens;
 }

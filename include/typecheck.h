@@ -1,108 +1,55 @@
 #pragma once
 
+#include <initializer_list>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <variant>
+#include <vector>
 
 #include "symtab.h"
 
-enum class C_type { C_int, C_bool, C_unit, C_any };
+struct C_int {};
+struct C_bool {};
+struct C_unit {};
+struct C_fn;
 
-using FnType = std::vector<C_type>;
-using SymbolType = std::variant<C_type, FnType>;
-using TS_Scope = std::unordered_map<std::string, SymbolType>;
+using C_type = std::variant<C_int, C_bool, C_unit, std::shared_ptr<C_fn>>;
+
+struct C_fn {
+  std::vector<C_type> args;
+  C_type return_type;
+};
+
+// using SymbolType = std::variant<C_Primitive, FnType>;
+using TS_Scope = std::unordered_map<std::string, C_type>;
+
+inline C_type make_fn(std::initializer_list<C_type> args, C_type ret) {
+  return std::make_unique<C_fn>(
+      C_fn{std::move(std::vector<C_type>(args)), std::move(ret)});
+}
+
+inline auto get_fn(const C_type &ct) {
+  return std::get_if<std::shared_ptr<C_fn>>(&ct);
+}
 
 const TS_Scope kTypecheckGlobals{
-    {"+",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_int,
-     }},
-    {"-",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_int,
-     }},
-    {"*",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_int,
-     }},
-    {"/",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_int,
-     }},
-    {"%",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_int,
-     }},
-    {"<",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_bool,
-     }},
-    {"<=",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_bool,
-     }},
-    {">",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_bool,
-     }},
-    {">=",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-         C_type::C_bool,
-     }},
-    {"and",
-     FnType{
-         C_type::C_bool,
-         C_type::C_bool,
-         C_type::C_bool,
-     }},
-    {"or",
-     FnType{
-         C_type::C_bool,
-         C_type::C_bool,
-         C_type::C_bool,
-     }},
-    {"unary_-",
-     FnType{
-         C_type::C_int,
-         C_type::C_int,
-     }},
-    {"unary_not",
-     FnType{
-         C_type::C_bool,
-         C_type::C_bool,
-     }},
-    {"print_int",
-     FnType{
-         C_type::C_int,
-         C_type::C_unit,
-     }},
-    {"print_bool",
-     FnType{
-         C_type::C_bool,
-         C_type::C_unit,
-     }},
-    {"read_int",
-     FnType{
-         C_type::C_int,
-     }},
+    {"+", make_fn({C_int{}, C_int{}}, C_int{})},
+    {"-", make_fn({C_int{}, C_int{}}, C_int{})},
+    {"*", make_fn({C_int{}, C_int{}}, C_int{})},
+    {"/", make_fn({C_int{}, C_int{}}, C_int{})},
+    {"%", make_fn({C_int{}, C_int{}}, C_int{})},
+    {"<", make_fn({C_int{}, C_int{}}, C_bool{})},
+    {"<=", make_fn({C_int{}, C_int{}}, C_bool{})},
+    {">", make_fn({C_int{}, C_int{}}, C_bool{})},
+    {">=", make_fn({C_int{}, C_int{}}, C_bool{})},
+    {"and", make_fn({C_bool{}, C_bool{}}, C_bool{})},
+    {"or", make_fn({C_bool{}, C_bool{}}, C_bool{})},
+    {"unary_-", make_fn({C_int{}}, C_int{})},
+    {"unary_not", make_fn({C_bool{}}, C_bool{})},
+    {"print_int", make_fn({C_int{}}, C_unit{})},
+    {"print_bool", make_fn({C_bool{}}, C_unit{})},
+    {"read_int", make_fn({}, C_int{})},
 };
 
 namespace compiler {
@@ -119,7 +66,7 @@ struct Variable;
 struct While;
 
 struct TypeChecker {
-  SymTab<std::string, SymbolType, TS_Scope> sym_tab{kTypecheckGlobals};
+  SymTab<std::string, C_type, TS_Scope> sym_tab{kTypecheckGlobals};
 
   C_type visit(const Literal &e);
   C_type visit(const Identifier &e);

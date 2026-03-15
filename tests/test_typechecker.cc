@@ -1,5 +1,6 @@
 #ifndef CATCH_CONFIG_MAIN
 #define CATCH_CONFIG_MAIN
+#include <variant>
 #endif
 
 #include <catch2/catch_test_macros.hpp>
@@ -9,7 +10,7 @@
 #include "compiler.h"
 #include "typecheck.h"
 
-using std::string_view;
+using std::string_view, std::holds_alternative;
 
 auto check(string_view input) {
   auto expr = compiler::parse(compiler::tokenize(input));
@@ -18,18 +19,18 @@ auto check(string_view input) {
 
 TEST_CASE("Typechecker", "[typechecker]") {
   SECTION("Basic tests") {
-    REQUIRE(check("1+1") == C_type::C_int);
-    REQUIRE(check("if false then 1") == C_type::C_unit);
-    REQUIRE(check("if true then 1 else 2") == C_type::C_int);
-    REQUIRE(check("if true then true else false") == C_type::C_bool);
-    REQUIRE(check("var a = 5") == C_type::C_unit);
-    REQUIRE(check("var b = 5; b + 2") == C_type::C_int);
-    REQUIRE(check("{ { var b = 5; b + 2 } }") == C_type::C_int);
-    REQUIRE(check("if 1<2 then 1") == C_type::C_unit);
-    REQUIRE(check("1 < 2") == C_type::C_bool);
-    REQUIRE(check("1 == 2") == C_type::C_bool);
-    REQUIRE(check("true == true") == C_type::C_bool);
-    REQUIRE(check("true == false") == C_type::C_bool);
+    REQUIRE(holds_alternative<C_int>(check("1+1")));
+    REQUIRE(holds_alternative<C_unit>(check("if false then 1")));
+    REQUIRE(holds_alternative<C_int>(check("if true then 1 else 2")));
+    REQUIRE(holds_alternative<C_bool>(check("if true then true else false")));
+    REQUIRE(holds_alternative<C_unit>(check("var a = 5")));
+    REQUIRE(holds_alternative<C_int>(check("var b = 5; b + 2")));
+    REQUIRE(holds_alternative<C_int>(check("{ { var b = 5; b + 2 } }")));
+    REQUIRE(holds_alternative<C_unit>(check("if 1<2 then 1")));
+    REQUIRE(holds_alternative<C_bool>(check("1 < 2")));
+    REQUIRE(holds_alternative<C_bool>(check("1 == 2")));
+    REQUIRE(holds_alternative<C_bool>(check("true == true")));
+    REQUIRE(holds_alternative<C_bool>(check("true == false")));
   }
 
   SECTION("Should not pass") {

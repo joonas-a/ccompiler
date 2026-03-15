@@ -58,11 +58,6 @@ UPtrExpr parse(const vector<Token> &tokens) {
   };
 
   auto parse_int_literal = [&]() {
-    if ((pos > 0 && peek(-1).type == Kind::INT_LITERAL) ||
-        peek(1).type == Kind::INT_LITERAL) {
-      throw SyntaxError("Parser: Received two int literals in a row");
-    }
-
     auto token = consume(nullopt);
     return make_unique<Literal>(stoul(token.text));
   };
@@ -85,11 +80,6 @@ UPtrExpr parse(const vector<Token> &tokens) {
   };
 
   auto parse_identifier = [&]() -> UPtrExpr {
-    if ((pos > 0 && peek(-1).type == Kind::IDENTIFIER) ||
-        peek(1).type == Kind::IDENTIFIER) {
-      throw SyntaxError("Two identifiers in a row");
-    }
-
     auto token = consume(nullopt);
 
     if (peek().text == "(") {
