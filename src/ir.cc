@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "expression.h"
-
 #include "ir.h"
 
 // IRGen assumes a thorough typechecking has been done and
@@ -16,7 +15,6 @@
 
 namespace compiler {
 
-// TODO: Move expr methods elsewhere
 IRVar Literal::accept(IRGenerator &tc) const { return tc.visit(*this); }
 IRVar Identifier::accept(IRGenerator &tc) const { return tc.visit(*this); }
 IRVar UnaryOp::accept(IRGenerator &tc) const { return tc.visit(*this); }
@@ -177,13 +175,11 @@ IRVar IRGenerator::visit(const While &e) {
   return this->utils.generate_unit();
 }
 
-// TODO: make scopes work
 IRVar IRGenerator::visit(const Variable &e) {
   const auto rhs = e.value->accept(*this);
   const auto lhs = this->utils.generate_var();
 
-  std::println("# IR variable: {}, given alias", e.name, lhs);
-
+  std::println("# Debug: IRGen: Copy({}, {})", rhs, lhs);
   // Naming clashes handled in typechecker
   this->sym_tab.add(e.name, lhs);
   this->ins.emplace_back(Copy{rhs, lhs});
@@ -196,14 +192,16 @@ IRVar IRGenerator::visit(const Identifier &e) {
 }
 
 IRVar IRGenerator::visit(const FunctionCall &e) {
-  const auto fn_name = e.name->value;
+  const auto fn = this->sym_tab.lookup(e.name->value);
+
+  std::println("# IR FunctionCall: {}", *fn);
 
   auto args = std::vector<IRVar>{};
   for (auto &arg : e.args)
     args.emplace_back(arg->accept(*this));
 
   const auto dst = this->utils.generate_var();
-  this->ins.emplace_back(Call{fn_name, args, dst});
+  this->ins.emplace_back(Call{*fn, args, dst});
 
   std::println("# IR: Fn call return");
 

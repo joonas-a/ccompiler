@@ -31,6 +31,7 @@ struct AssemblyGenerator {
   void generate(std::vector<Instruction> &instructions);
   void emit_ir_vars();
   void print_asm();
+  void call_function(Call call);
 };
 
 } // namespace compiler

@@ -133,14 +133,12 @@ C_type TypeChecker::visit(const While &e) {
 }
 
 C_type TypeChecker::visit(const Variable &e) {
-  auto name = e.name;
-
-  if (this->sym_tab.local_key_exists(name))
+  if (this->sym_tab.local_key_exists(e.name))
     throw runtime_error("Typecheck: Attempted to re-declare a local variable");
 
   auto var_type = e.value->accept(*this);
 
-  this->sym_tab.add(name, var_type);
+  this->sym_tab.add(e.name, var_type);
 
   return C_unit{};
 }

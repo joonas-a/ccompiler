@@ -16,6 +16,9 @@ void Locals::init_stack(IRVarVec &ir_vars) {
     ++this->stack_used;
     this->ir_var_map.emplace(var, format("-{}(%rbp)", 8 * this->stack_used));
   }
+  this->ir_var_map.emplace("print_int", "$print_int");
+  this->ir_var_map.emplace("print_bool", "$print_bool");
+  this->ir_var_map.emplace("read_int", "$read_int");
 }
 
 std::string Locals::get_addr_for(IRVar var) {
@@ -26,7 +29,19 @@ std::string Locals::get_addr_for(IRVar var) {
   for (auto &x : ir_var_map)
     std::println("{} -> {}", x.first, x.second);
 
-  throw std::runtime_error("Variable not allocated");
+  throw std::runtime_error("Asm gen: Variable not allocated");
+}
+
+// Only supports print_int, print_bool, read_int for now
+void AssemblyGenerator::call_function(Call call) {
+  this->emit(format("subq $8, %rsp"));
+  if (call.args.size() != 0) {
+    this->emit(
+        format("movq {}, %rdi", this->locals.get_addr_for(call.args[0])));
+  }
+  this->emit(format("callq *{}", this->locals.get_addr_for(call.fn)));
+  this->emit(format("movq %rax, {}", this->locals.get_addr_for(call.dst)));
+  this->emit(format("add $8, %rsp"));
 }
 
 void AssemblyGenerator::start_boiler() {
@@ -111,7 +126,7 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
             emit(format("jmp .L{}", in.else_label.text));
 
           } else if constexpr (std::is_same_v<T, Call>) {
-            emit(format("# Call {}", in.fn));
+            emit(format("# Call {} ...args, {}", in.fn, in.dst));
 
             if (in.fn == "+") {
               emit(format("movq {}, %rax", locals.get_addr_for(in.args[0])));
@@ -191,6 +206,8 @@ void AssemblyGenerator::generate(std::vector<Instruction> &instructions) {
             } else if (in.fn == "read_int") {
               emit(format("callq read_int"));
               emit(format("movq %rax, {}", locals.get_addr_for(in.dst)));
+            } else {
+              call_function(in);
             }
           }
           emit("");
