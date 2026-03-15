@@ -36,7 +36,7 @@ struct C_fn {
       if (!equals(a.args[i], b.args[i]))
         return false;
     }
-    return true;
+    return (equals(a.return_type, b.return_type));
   }
 };
 
@@ -58,7 +58,6 @@ inline bool equals(const C_type &a, const C_type &b) {
       a);
 }
 
-// using SymbolType = std::variant<C_Primitive, FnType>;
 using TS_Scope = std::unordered_map<std::string, C_type>;
 
 inline C_type make_fn(std::vector<C_type> args, C_type ret) {
