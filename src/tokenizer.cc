@@ -13,8 +13,8 @@ namespace compiler {
 constexpr std::array<std::string_view, 15> kOperators = {
     "+",  "-", "*", "/", "=",   "==", "!=", "<=",
     ">=", "<", ">", "%", "and", "or", "not"};
-constexpr std::array<std::string_view, 6> kPunctuators = {"(", ")", "{",
-                                                          "}", ",", ";"};
+constexpr std::array<std::string_view, 7> kPunctuators = {"(", ")", "{", "}",
+                                                          ",", ";", ":"};
 constexpr std::array<std::string_view, 2> kComments = {"//", "#"};
 constexpr std::array<std::string_view, 3> kConditionals = {"if", "then",
                                                            "else"};
@@ -47,7 +47,7 @@ std::vector<Token> tokenize(const std::string_view input) {
   constexpr auto delim{std::string_view{"\n"}};
   const auto tokenizer_regex =
       std::regex("[a-zA-Z_]+[a-zA-Z_0-9]*|[0-9]+|//|==|!=|<=|>"
-                 "=|[//+-//*/%=<>//(//)//{//},;#]{1}");
+                 "=|[//+-//*/%=<>//(//)//{//},;:#]{1}");
 
   size_t line_num = 1;
   for (const auto line : std::views::split(input, delim)) {
