@@ -10,9 +10,6 @@
 // IRGen assumes a thorough typechecking has been done and
 // existence of any identifiers / other symbols confirmed
 
-// TODOS:
-// Symbol table and scopes
-
 namespace compiler {
 
 IRVar Literal::accept(IRGenerator &tc) const { return tc.visit(*this); }
@@ -233,7 +230,6 @@ Labels IRUtils::generate_labels(std::string_view keyword) {
                          std::format("main_{}_end{}", keyword, label_count));
 }
 
-// TODO: add types to ast nodes
 IRGenerator generate_ir(UPtrExpr &root, C_type root_type) {
   IRGenerator ir_gen{};
 

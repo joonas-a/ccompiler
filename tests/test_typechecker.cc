@@ -40,6 +40,11 @@ TEST_CASE("Typechecker", "[typechecker]") {
     REQUIRE_THROWS(check("var a: Bool  = 1;"));
     REQUIRE_THROWS(check("var a: Int = print_int;"));
     REQUIRE_THROWS(check("var x: (true) => Unit = print_int; x(4)"));
+    REQUIRE_THROWS(check("var x: (Int) => Int = print_int;"));
+    REQUIRE_THROWS(check("var x: (Int) => Bool = print_int;"));
+    REQUIRE_THROWS(check("var x: (Bool) => Unit = print_int;"));
+    REQUIRE_THROWS(check("var x: () => Unit = print_int;"));
+    REQUIRE_THROWS(check("var x: (Bool) => Bool = print_bool;"));
   }
 
   SECTION("Typehints") {
