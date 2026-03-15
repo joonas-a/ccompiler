@@ -10,6 +10,7 @@
 
 #include "errors.h"
 #include "expression.h"
+#include "typecheck.h"
 
 using namespace std;
 
@@ -123,6 +124,35 @@ UPtrExpr parse(const vector<Token> &tokens) {
     return make_unique<UnaryOp>(op, parse_factor());
   };
 
+  auto parse_typehint = [&](auto &&self) -> C_type {
+    if (peek().text == "(") {
+      std::vector<C_type> args{};
+      consume(nullopt);
+
+      while (peek().text != ")") {
+        args.emplace_back(self(self));
+        if (peek().text == ",")
+          consume(nullopt);
+      }
+
+      consume(")");
+      consume("=");
+      consume(">");
+      return make_fn(args, self(self));
+
+    } else if (peek().text == "Int") {
+      consume(nullopt);
+      return C_int{};
+    } else if (peek().text == "Bool") {
+      consume(nullopt);
+      return C_bool{};
+    } else if (peek().text == "Unit") {
+      consume(nullopt);
+      return C_unit{};
+    }
+    throw SyntaxError("Parser: Unknown type hint");
+  };
+
   auto parse_variable_decl = [&]() {
     consume("var");
     auto token = consume(nullopt);
@@ -130,8 +160,15 @@ UPtrExpr parse(const vector<Token> &tokens) {
       throw SyntaxError("Parser: Variable name must be an identifier, found: " +
                         token.as_string());
     }
+
+    optional<C_type> typehint{};
+    if (peek().text == ":") {
+      consume(nullopt);
+      typehint = parse_typehint(parse_typehint);
+    }
+
     consume("=");
-    return make_unique<Variable>(token.text, parse_expr());
+    return make_unique<Variable>(token.text, std::move(typehint), parse_expr());
   };
 
   auto parse_top_level = [&]() -> UPtrExpr {

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <type_traits>
 #include <variant>
@@ -250,10 +251,14 @@ struct Block : Expression {
 
 struct Variable : Expression {
   std::string name;
+  std::optional<C_type> typehint{};
   UPtrExpr value;
 
   explicit Variable(std::string n, UPtrExpr v)
       : name(std::move(n)), value(std::move(v)) {};
+
+  explicit Variable(std::string n, std::optional<C_type> th, UPtrExpr v)
+      : name(std::move(n)), typehint(std::move(th)), value(std::move(v)) {};
 
   C_type accept(TypeChecker &tc) const override;
   IRVar accept(IRGenerator &ir) const override;

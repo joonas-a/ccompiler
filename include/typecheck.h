@@ -24,6 +24,9 @@ struct C_fn {
 // using SymbolType = std::variant<C_Primitive, FnType>;
 using TS_Scope = std::unordered_map<std::string, C_type>;
 
+inline C_type make_fn(std::vector<C_type> args, C_type ret) {
+  return std::make_unique<C_fn>(C_fn{std::move(args), std::move(ret)});
+}
 inline C_type make_fn(std::initializer_list<C_type> args, C_type ret) {
   return std::make_unique<C_fn>(
       C_fn{std::move(std::vector<C_type>(args)), std::move(ret)});
