@@ -6,9 +6,6 @@
 #include <ostream>
 #include <sstream>
 #include <string>
-#include <unordered_map>
-#include <vector>
-#include <variant>
 
 enum class Kind {
   IDENTIFIER,
@@ -20,7 +17,6 @@ enum class Kind {
   END,
 };
 
-enum class C_type { C_int, C_bool, C_unit, C_any };
 
 struct Loc {
   size_t row;
@@ -49,7 +45,3 @@ struct Token {
     return oss.str();
   }
 };
-
-using FnType = std::vector<C_type>;
-using SymEntry = std::variant<C_type, FnType>;
-using Scope = std::unordered_map<std::string, SymEntry>;

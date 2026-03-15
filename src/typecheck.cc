@@ -1,11 +1,9 @@
-#include <iostream>
 #include <print>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <variant>
 
-#include "datatypes.h"
 #include "expression.h"
 #include "symtab.h"
 #include "typecheck.h"
@@ -146,15 +144,6 @@ C_type TypeChecker::visit(const Variable &e) {
 
   this->sym_tab.add(name, var_type);
 
-  for (auto x : this->sym_tab.stack.back()) {
-    auto tmp = get_if<C_type>(&x.second);
-    if (tmp) {
-      // cout << x.first << static_cast<int>(*tmp) << "\n";
-    }
-  }
-
-  // println("Assigned var, returning now");
-
   return C_type::C_unit;
 }
 
@@ -179,8 +168,10 @@ C_type TypeChecker::visit(const FunctionCall &e) {
   if (!symEntry)
     throw runtime_error("Function with given name was not found");
 
-  if (symEntry->index() == 0)
+  if (symEntry->index() == 0) {
+    println("SymEntry contained: {}", (int)get<0>(*symEntry));
     throw runtime_error("Variable did not contain a function call");
+  }
 
   auto expected = get<FnType>(*symEntry);
 

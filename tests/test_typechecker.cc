@@ -7,6 +7,7 @@
 #include <string_view>
 
 #include "compiler.h"
+#include "typecheck.h"
 
 using std::string_view;
 

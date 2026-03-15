@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "datatypes.h"
+#include <typecheck.h>
 #include "expression.h"
 #include "ir.h"
 

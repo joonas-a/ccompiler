@@ -4,16 +4,14 @@
 #include <vector>
 
 #include "expression.h"
+
 #include "ir.h"
 
 // IRGen assumes a thorough typechecking has been done and
 // existence of any identifiers / other symbols confirmed
 
-struct SymTab;
-
 // TODOS:
-// Symbol table incl. all functions etc
-// Scopes
+// Symbol table and scopes
 
 namespace compiler {
 
@@ -148,11 +146,16 @@ IRVar IRGenerator::visit(const Block &e) {
   if (e.exprs.empty())
     return this->utils.generate_unit();
 
+  this->sym_tab.add_scope();
+
   for (size_t i = 0; i < e.exprs.size() - 1; ++i) {
     e.exprs[i]->accept(*this);
   }
 
-  return e.exprs.back()->accept(*this);
+  auto block_var = e.exprs.back()->accept(*this);
+
+  this->sym_tab.remove_scope();
+  return block_var;
 }
 
 IRVar IRGenerator::visit(const While &e) {
@@ -176,17 +179,19 @@ IRVar IRGenerator::visit(const While &e) {
 // TODO: make scopes work
 IRVar IRGenerator::visit(const Variable &e) {
   const auto rhs = e.value->accept(*this);
-  std::println("# IR variable");
   const auto lhs = this->utils.generate_var();
 
-  this->sym_tab.emplace(e.name, lhs);
+  std::println("# IR variable: {}, given alias", e.name, lhs);
+
+  // Naming clashes handled in typechecker
+  this->sym_tab.add(e.name, lhs);
   this->ins.emplace_back(Copy{rhs, lhs});
 
   return this->utils.generate_unit();
 }
 
 IRVar IRGenerator::visit(const Identifier &e) {
-  return this->sym_tab.find(e.value)->second;
+  return *this->sym_tab.lookup(e.value);
 }
 
 IRVar IRGenerator::visit(const FunctionCall &e) {
@@ -230,8 +235,6 @@ Labels IRUtils::generate_labels(std::string_view keyword) {
 }
 
 IRGenerator generate_ir(UPtrExpr &root, C_type root_type) {
-  // std::unordered_map<IRVar, IRVar> symbol_table{};
-
   IRGenerator ir_gen{};
 
   auto root_ir_var = root->accept(ir_gen);

@@ -7,8 +7,8 @@
 #include <variant>
 #include <vector>
 
-#include "datatypes.h"
 #include "ir.h"
+#include "typecheck.h"
 
 namespace compiler {
 

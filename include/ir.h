@@ -1,8 +1,9 @@
 #pragma once
 
+#include "symtab.h"
+#include <map>
 #include <string>
 #include <tuple>
-#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -65,7 +66,7 @@ using Labels = std::tuple<Label, Label, Label>;
 struct IRUtils {
   size_t var_count{};
   size_t label_count{};
-  bool unit_dispatched{ false };
+  bool unit_dispatched{false};
 
   std::vector<IRVar> ir_vars{};
   IRVar generate_var();
@@ -73,9 +74,17 @@ struct IRUtils {
   Labels generate_labels(std::string_view keyword);
 };
 
+using IR_Scope = std::map<std::string, IRVar>;
+
+static const IR_Scope kIRGlobals{
+    {"print_int", "print_int"},
+    {"print_bool", "print_bool"},
+    {"read_int", "read_int"},
+};
+
 struct IRGenerator {
   IRUtils utils{};
-  std::unordered_map<std::string, IRVar> sym_tab{};
+  SymTab<std::string, IRVar, IR_Scope> sym_tab{kIRGlobals};
   std::vector<Instruction> ins{};
 
   IRVar visit(const Literal &e);
